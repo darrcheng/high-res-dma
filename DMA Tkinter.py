@@ -30,7 +30,7 @@ voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Declare Voltage Stop, Set Default Value
 voltage_stop = StringVar()
-voltage_stop.set(50) #Default Value 500V
+voltage_stop.set(400) #Default Value 500V
 
 #TKINTER defining the callback function (observer) 
 def my_callback(var,index,mode): 
@@ -43,9 +43,9 @@ def set_voltage(voltage, handle, name):
     voltage_output = voltage * signal_factor
     #Labjack code here to set voltage
     
-def read_voltage(instrument, handle, name = 'AIN0'):
+def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
      result = ljm.eReadName(handle, name)
-     instrument = instrument.append(result) 
+     instrument = instrument.append(result * scaling) 
 
 def start_run():
     return True
@@ -151,7 +151,7 @@ def run_program():
     #Define Labjack Inputs
     electrometer_read = 'AIN0'
     dma_read = 'AIN1'
-    dma_write = 'DIO0'
+    dma_write = 'TDAC0'
     # fig = Figure(figsize=(5, 4), dpi=100)
     # #fig.add_subplot(111).plot(dma_voltage, electrometer_voltage)
 
@@ -171,6 +171,9 @@ def run_program():
 
     event=threading.Event()
 
+    #Clear Figure
+#    figure1.cla()
+
     #open file
     with open(filename, 'w', newline='') as csvfile:
         data_writer = csv.writer(csvfile, delimiter=',')
@@ -183,8 +186,8 @@ def run_program():
 
             #Take Readings
             time_tracker(exact_time, time_from_start)
-            read_voltage(dma_voltage, handle, electrometer_read)
-            read_voltage(electrometer_voltage, handle, dma_read)
+            read_voltage(dma_voltage, handle, dma_read, 200)
+            read_voltage(electrometer_voltage, handle, electrometer_read)
 
             #Update GUI
             bertan_voltage.delete('1.0', '1.end')
@@ -200,11 +203,11 @@ def run_program():
             root.update()
 
             #Set voltage
-            ljm.eWriteName(handle, dma_write, current_voltage/2000)
+            ljm.eWriteName(handle, dma_write, current_voltage/200)
 
             #Update graphs
             #fig = Figure(figsize=(5, 4), dpi=100)
-            figure1.plot(time_from_start, electrometer_voltage)
+            figure1.plot(dma_voltage, electrometer_voltage)
 
             #canvas = FigureCanvasTkAgg(fig, master=GraphFrame)  # A tk.DrawingArea.
             canvas.draw()
