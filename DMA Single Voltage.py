@@ -71,8 +71,10 @@ def time_tracker(exact_time, time_list):
     exact_time.append(current_time)
     if not time_list:
         time_list.append(0)
+        global record_start
+        record_start = exact_time[0]
     else:
-        time_difference = current_time - exact_time[0]
+        time_difference = current_time - record_start
         time_list.append(time_difference.total_seconds())
 
 def create_filename():
@@ -198,8 +200,18 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         ljm.eWriteName(handle, dma_write, current_voltage/200)
 
         #Update graphs
-        if len(time_from_start) > 2:
-            figure1.plot(time_from_start[-2:], electrometer_voltage[-2:],'b')
+        # if len(time_from_start) <= 2:
+        #     # global line_1
+        #     # line_1, = 
+        #     figure1.plot(time_from_start, electrometer_voltage, 'b')
+        if len(time_from_start) > 100:
+            time_from_start.pop(0)
+            electrometer_voltage.pop(0)
+            dma_voltage.pop(0)
+            exact_time.pop(0)
+            figure1.cla()
+            figure1.plot(time_from_start, electrometer_voltage, 'b')
+            plt.autoscale(True)
         else:
             figure1.plot(time_from_start, electrometer_voltage, 'b')
 
