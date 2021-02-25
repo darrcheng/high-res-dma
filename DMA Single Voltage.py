@@ -1,5 +1,4 @@
-#import u3 #Imports Labjack U3 Class
-#from labjack import ljm
+from labjack import ljm
 import struct
 from datetime import datetime #Pulls current time from system
 from datetime import timedelta #Calculates difference in time
@@ -24,7 +23,7 @@ from matplotlib.figure import Figure
 
 #Declare Streaming Interval, Set Default Value
 streamingInterval = StringVar()
-streamingInterval.set(1000) #Default Value 1000ms 
+streamingInterval.set(500) #Default Value 1000ms 
 #Declare Voltage Start, Set Default Value
 voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
@@ -42,19 +41,22 @@ def set_voltage(voltage, handle, name):
     voltage_output = voltage * signal_factor
     #Labjack code here to set voltage
     
-def read_voltage(instrument, handle, name = 'AIN0'):
+def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
      result = ljm.eReadName(handle, name)
-     instrument = instrument.append(result) 
+     instrument = instrument.append(result * scaling) 
 
 def start_run():
     BertanVoltSet.configure(text='Stop', command=stop_run)
-    l['text'] = 'Working...'
     global interrupt; interrupt = False
     global run_filename; run_filename = create_filename()
     write_header()
+    run_program(exact_time = [], time_from_start = [], dma_voltage = [], electrometer_voltage = [])
+    figure1.cla()
+
 
 def stop_run():
     global interrupt; interrupt = True
+    BertanVoltSet.configure(text='Start', command=start_run)
 
 
 def write_header():
@@ -152,15 +154,15 @@ electrometer_output.insert('1.0', '0.00')
 ttk.Label(BertanFrame, text="Volts").grid(row=5, column=6, padx=0)
 
 #Open Labjack
-# handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
-# info = ljm.getHandleInfo(handle)
-# print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
-#     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
-#     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
-#Define Labjack Inputs
+handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
+info = ljm.getHandleInfo(handle)
+print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
+    "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
+    (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
+# Define Labjack Inputs
 global electrometer_read; electrometer_read = 'AIN0'
 global dma_read; dma_read = 'AIN1'
-global dma_write; dma_write = 'DIO0'
+global dma_write; dma_write = 'TDAC0'
 
 def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electrometer_voltage = []):
 
@@ -172,13 +174,13 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         return
 
     #open file
-    with open(run_filename, 'w', newline='') as csvfile:
+    with open(run_filename, 'a', newline='') as csvfile:
         data_writer = csv.writer(csvfile, delimiter=',')
         
         #Take Readings
         time_tracker(exact_time, time_from_start)
-        read_voltage(dma_voltage, handle, electrometer_read)
-        read_voltage(electrometer_voltage, handle, dma_read)
+        read_voltage(dma_voltage, handle, dma_read, 200)
+        read_voltage(electrometer_voltage, handle, electrometer_read)
 
         #Update GUI
         bertan_voltage.delete('1.0', '1.end')
@@ -190,27 +192,30 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1]])
 
         root.after(int(step_time*50/52.458))
-        root.update()
+        # root.update()
 
         #Set voltage
-        ljm.eWriteName(handle, dma_write, current_voltage/2000)
+        ljm.eWriteName(handle, dma_write, current_voltage/200)
 
         #Update graphs
-        figure1.plot(time_from_start, electrometer_voltage)
+        if len(time_from_start) > 2:
+            figure1.plot(time_from_start[-2:], electrometer_voltage[-2:],'b')
+        else:
+            figure1.plot(time_from_start, electrometer_voltage, 'b')
 
         #canvas = FigureCanvasTkAgg(fig, master=GraphFrame)  # A tk.DrawingArea.
         canvas.draw()
-        canvas.get_tk_widget().pack()
+        # canvas.get_tk_widget().pack()
         
-    run_program(exact_time=exact_time, time_from_start=time_from_start, dma_voltage=dma_voltage, electrometer_voltage=electrometer_voltage)
+    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, dma_voltage=dma_voltage, electrometer_voltage=electrometer_voltage))
 
 
 
 
 
 #Read Set Voltages
-BertanVoltSet = Button(BertanFrame,text="Start", width=5, bg='springgreen', command = run_program)\
-    .grid(row=2, column=7, padx=10, ipady=1) 
+BertanVoltSet = ttk.Button(BertanFrame,text="Start", width=5, command = start_run)
+BertanVoltSet.grid(row=2, column=7, padx=10, ipady=1) 
 
 
 root.mainloop()
