@@ -50,7 +50,7 @@ def start_run():
     global interrupt; interrupt = False
     global run_filename; run_filename = create_filename()
     write_header()
-    run_program(exact_time = [], time_from_start = [], dma_voltage = [], electrometer_voltage = [])
+    run_program(exact_time = [], time_from_start = [], electrometer_voltage = [])
     figure1.cla()
 
 
@@ -64,7 +64,8 @@ def write_header():
     with open(run_filename, 'w', newline='') as csvfile:
         data_writer = csv.writer(csvfile, delimiter=',')
         #write header
-        data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage'])
+        data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage', \
+            'Electrospray Voltage', 'Electrospray Current'])
 
 def time_tracker(exact_time, time_list):
     current_time = datetime.now()
@@ -149,9 +150,15 @@ bertan_voltage.grid(row=4, column=5) #change t0 to BertanVoltage
 bertan_voltage.insert('1.0', '0.00')
 ttk.Label(BertanFrame, text="Volts").grid(row=4, column=6, padx=0)
 
-ttk.Label(BertanFrame, text="Electrometer Voltage:").grid(row=5,column=4)
+ttk.Label(BertanFrame, text="Electrospray Current:").grid(row=5,column=4)
+electrospray_output = Text(BertanFrame,width=10, height=1)
+electrospray_output.grid(row=5, column=5) #change t1 to ElectroVoltage
+electrospray_output.insert('1.0', '0.00')
+ttk.Label(BertanFrame, text="Volts").grid(row=5, column=6, padx=0)
+
+ttk.Label(BertanFrame, text="Electrometer Voltage:").grid(row=6,column=4)
 electrometer_output = Text(BertanFrame,width=10, height=1)
-electrometer_output.grid(row=5, column=5) #change t1 to ElectroVoltage
+electrometer_output.grid(row=6, column=5) #change t1 to ElectroVoltage
 electrometer_output.insert('1.0', '0.00')
 ttk.Label(BertanFrame, text="Volts").grid(row=5, column=6, padx=0)
 
@@ -164,9 +171,11 @@ print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
 # Define Labjack Inputs
 global electrometer_read; electrometer_read = 'AIN0'
 global dma_read; dma_read = 'AIN1'
+global electrospray_voltage_read; electrospray_voltage_read = 'AIN2'
+global electrospray_current_read; electrospray_current_read = 'AIN3'
 global dma_write; dma_write = 'TDAC0'
 
-def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electrometer_voltage = []):
+def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []):
 
     #Pull operating parameters from GUI
     current_voltage = int(voltage_start.get())
@@ -181,17 +190,22 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         
         #Take Readings
         time_tracker(exact_time, time_from_start)
-        read_voltage(dma_voltage, handle, dma_read, 200)
+        dma_voltage = ljm.eReadName(handle, dma_read) * 1000 / 5
+        electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
+        electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
         read_voltage(electrometer_voltage, handle, electrometer_read)
 
         #Update GUI
         bertan_voltage.delete('1.0', '1.end')
-        bertan_voltage.insert('1.0',"%.2f" % dma_voltage[-1])
+        bertan_voltage.insert('1.0',"%.2f" % dma_voltage)
         electrometer_output.delete('1.0', '1.end')
         electrometer_output.insert('1.0',"%.2f" % electrometer_voltage[-1])
-
+        electrospray_output.delete('1.0', '1.end')
+        electrospray_output.insert('1.0',"%.2f" % electrospray_current)
+        
         #Write line to file
-        data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1]])
+        data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage, electrometer_voltage[-1], \
+            electrospray_voltage, electrospray_current])
 
         root.after(int(step_time*50/52.458))
         # root.update()
@@ -207,7 +221,6 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         if len(time_from_start) > 100:
             time_from_start.pop(0)
             electrometer_voltage.pop(0)
-            dma_voltage.pop(0)
             exact_time.pop(0)
             figure1.cla()
             figure1.plot(time_from_start, electrometer_voltage, 'b')
@@ -219,7 +232,7 @@ def run_program(exact_time = [], time_from_start = [], dma_voltage = [], electro
         canvas.draw()
         # canvas.get_tk_widget().pack()
         
-    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, dma_voltage=dma_voltage, electrometer_voltage=electrometer_voltage))
+    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, electrometer_voltage=electrometer_voltage))
 
 
 
