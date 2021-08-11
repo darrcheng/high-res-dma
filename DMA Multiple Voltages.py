@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = [100]
+global sample_array; sample_array = [113,129,148,187,214,263,305,394]
 
 
 #Declare Streaming Interval, Set Default Value
@@ -57,6 +57,9 @@ def start_run():
 def stop_run():
     global interrupt; interrupt = True
     BertanVoltSet.configure(text='Start', command=start_run)
+    #Reset Voltage to 0 at the end of a run
+    ljm.eWriteName(handle, dma_write, 0)
+
 
 
 def write_header():
