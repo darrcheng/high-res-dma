@@ -92,6 +92,15 @@ def run_program():
         #Loop through voltages
         while (current_voltage <= voltage_end):
 
+            #Datetime
+            if not time_from_start:
+                global datetime_old; datetime_old = datetime.now()
+            elapsed_milliseconds = 0
+            while elapsed_milliseconds < step_time:
+                datetime_new = datetime.now()
+                elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds()*1000)
+            datetime_old = datetime_old + timedelta(seconds = step_time/1000)
+
             #Take Readings
             time_tracker(exact_time, time_from_start)
             read_voltage(dma_voltage, handle, dma_read, 200)
@@ -107,7 +116,7 @@ def run_program():
             data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1]])
 
             #Pause for interval
-            root.after(int(step_time*50/52.458))
+            #root.after(int(step_time*50/52.458))
             root.update()
 
             #Set voltage

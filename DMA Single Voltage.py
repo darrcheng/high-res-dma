@@ -23,7 +23,7 @@ from matplotlib.figure import Figure
 
 #Declare Streaming Interval, Set Default Value
 streamingInterval = StringVar()
-streamingInterval.set(500) #Default Value 1000ms 
+streamingInterval.set(1000) #Default Value 1000ms 
 #Declare Voltage Start, Set Default Value
 voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
@@ -172,10 +172,20 @@ print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
 global electrometer_read; electrometer_read = 'AIN0'
 global dma_read; dma_read = 'AIN1'
 global electrospray_voltage_read; electrospray_voltage_read = 'AIN2'
+            #Set voltage
 global electrospray_current_read; electrospray_current_read = 'AIN3'
 global dma_write; dma_write = 'TDAC0'
 
 def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []):
+
+    #Datetime
+    if not time_from_start:
+        global datetime_old; datetime_old = datetime.now()
+    elapsed_milliseconds = 0
+    while elapsed_milliseconds < 1000:
+        datetime_new = datetime.now()
+        elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds()*1000)
+    datetime_old = datetime_old + timedelta(seconds = 1)
 
     #Pull operating parameters from GUI
     current_voltage = int(voltage_start.get())
@@ -207,7 +217,7 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
         data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage, electrometer_voltage[-1], \
             electrospray_voltage, electrospray_current])
 
-        root.after(int(step_time*50/52.458))
+        #root.after(int(step_time*90/98.8761*100/101.021))
         # root.update()
 
         #Set voltage
