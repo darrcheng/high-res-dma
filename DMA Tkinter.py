@@ -23,19 +23,23 @@ from matplotlib.figure import Figure
 #Set Input Variables 
 #Declare Streaming Interval, Set Default Value
 streamingInterval = StringVar()
-streamingInterval.set(1000) #Default Value 1000ms 
+streamingInterval.set(500) #Default Value 1000ms 
 #Declare Voltage Start, Set Default Value
 voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Declare Voltage Stop, Set Default Value
 voltage_stop = StringVar()
-voltage_stop.set(400) #Default Value 500V
+voltage_stop.set(600) #Default Value 500V
+#Input Electrometer Flow Rate
+electrometer_flow = StringVar()
+electrometer_flow.set(1500)
 
 #TKINTER defining the callback function (observer), allows Tkinter to auto pull in changes to fields
 def my_callback(var,index,mode): 
     print("Streaming intverval: {}".format(streamingInterval.get()))
     print("Start Voltage: {}".format(voltage_start.get()))
     print("Stop Voltage: {}".format(voltage_stop.get()))
+    print("Flow Rate: {}".format(electrometer_flow.get()))
 
 #Function to read the voltage from the Labjack, includes a scaling factor for conversions    
 def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
@@ -59,7 +63,8 @@ def run_program():
     exact_time = []
     time_from_start = []
     dma_voltage = []
-    electrometer_voltage = []    
+    electrometer_voltage = []
+    electrometer_conc = []
 
     #Define Labjack Inputs
     electrometer_read = 'AIN0'
@@ -70,6 +75,7 @@ def run_program():
     current_voltage = int(voltage_start.get())
     voltage_end = int(voltage_stop.get())
     step_time = int(streamingInterval.get())
+    flow_rate = int(electrometer_flow.get())
 
     #Create Filename
     start_time = datetime.now()
@@ -87,7 +93,7 @@ def run_program():
         data_writer = csv.writer(csvfile, delimiter=',')
         
         #Write CSV file header header
-        data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage'])
+        data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage','Electrometer Concentration'])
         
         #Loop through voltages
         while (current_voltage <= voltage_end):
@@ -103,9 +109,10 @@ def run_program():
 
             #Take Readings
             time_tracker(exact_time, time_from_start)
-            read_voltage(dma_voltage, handle, dma_read, 200)
+            read_voltage(dma_voltage, handle, dma_read, 2000)
             read_voltage(electrometer_voltage, handle, electrometer_read)
-
+            electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
+            
             #Update GUI
             bertan_voltage.delete('1.0', '1.end')
             bertan_voltage.insert('1.0',"%.2f" % dma_voltage[-1])
@@ -113,22 +120,22 @@ def run_program():
             electrometer_output.insert('1.0',"%.2f" % electrometer_voltage[-1])
 
             #Write line to file
-            data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1]])
+            data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1],electrometer_conc[-1]])
 
             #Pause for interval
             #root.after(int(step_time*50/52.458))
             root.update()
 
             #Set voltage
-            ljm.eWriteName(handle, dma_write, current_voltage/200)
+            ljm.eWriteName(handle, dma_write, current_voltage/2000)
 
             #Update graphs
-            figure1.plot(dma_voltage, electrometer_voltage)
+            figure1.plot(dma_voltage, electrometer_conc)
             canvas.draw()
             canvas.get_tk_widget().pack()
 
             #Increment Current Voltage
-            current_voltage += 1
+            current_voltage += 5
         
         #Reset Voltage to 0 at the end of a run
         ljm.eWriteName(handle, dma_write, 0)
@@ -184,17 +191,21 @@ ttk.Label(BertanFrame, text="Set STOP Voltage:").grid(row=3, column=4)
 BertanStop=ttk.Entry(BertanFrame,textvariable = voltage_stop,width=13).grid(row=3,column=5, padx=10) #change e1 to BertanStop
 voltage_stop.trace_add('write',my_callback)
 
-ttk.Label(BertanFrame, text="Actual Voltage:").grid(row=4,column=4)
-bertan_voltage = Text(BertanFrame,width=10, height=1)
-bertan_voltage.grid(row=4, column=5) #change t0 to BertanVoltage
-bertan_voltage.insert('1.0', '0.00')
-ttk.Label(BertanFrame, text="Volts").grid(row=4, column=6, padx=0)
+ttk.Label(BertanFrame, text="Input Flow Rate").grid(row=4, column=4)
+ElectrometerFlow=ttk.Entry(BertanFrame,textvariable = electrometer_flow,width=13).grid(row=4,column=5, padx=10) #change e1 to BertanStop
+electrometer_flow.trace_add('write',my_callback)
 
-ttk.Label(BertanFrame, text="Electrometer Voltage:").grid(row=5,column=4)
-electrometer_output = Text(BertanFrame,width=10, height=1)
-electrometer_output.grid(row=5, column=5) #change t1 to ElectroVoltage
-electrometer_output.insert('1.0', '0.00')
+ttk.Label(BertanFrame, text="Actual Voltage:").grid(row=5,column=4)
+bertan_voltage = Text(BertanFrame,width=10, height=1)
+bertan_voltage.grid(row=5, column=5) #change t0 to BertanVoltage
+bertan_voltage.insert('1.0', '0.00')
 ttk.Label(BertanFrame, text="Volts").grid(row=5, column=6, padx=0)
+
+ttk.Label(BertanFrame, text="Electrometer Voltage:").grid(row=6,column=4)
+electrometer_output = Text(BertanFrame,width=10, height=1)
+electrometer_output.grid(row=6, column=5) #change t1 to ElectroVoltage
+electrometer_output.insert('1.0', '0.00')
+ttk.Label(BertanFrame, text="Volts").grid(row=6, column=6, padx=0)
 
 #Button to run program
 BertanVoltSet = Button(BertanFrame,text="Start", width=5, bg='springgreen', command = run_program)\
