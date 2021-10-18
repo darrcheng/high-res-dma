@@ -30,6 +30,9 @@ voltage_start.set(0) #Default Value 0V
 #Declare Voltage Stop, Set Default Value
 voltage_stop = StringVar()
 voltage_stop.set(50) #Default Value 500V
+#Input Electrometer Flow Rate
+electrometer_flow = StringVar()
+electrometer_flow.set(1500)
 
 #TKINTER defining the callback function (observer) 
 def my_callback(var,index,mode): 
@@ -50,7 +53,7 @@ def start_run():
     global interrupt; interrupt = False
     global run_filename; run_filename = create_filename()
     write_header()
-    run_program(exact_time = [], time_from_start = [], electrometer_voltage = [])
+    run_program(exact_time = [], time_from_start = [], electrometer_voltage = [], electrometer_conc = [])
     figure1.cla()
 
 
@@ -65,7 +68,7 @@ def write_header():
         data_writer = csv.writer(csvfile, delimiter=',')
         #write header
         data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage', \
-            'Electrospray Voltage', 'Electrospray Current'])
+            'Electrometer Concentration', 'Electrospray Voltage', 'Electrospray Current'])
 
 def time_tracker(exact_time, time_list):
     current_time = datetime.now()
@@ -144,6 +147,10 @@ BertanStart.grid(row=2,column=5, padx=10) #change e0 to BertanStart
 ttk.Label(BertanFrame,text="Value from -5V to 5V").grid(row=2, column=6,padx=0)
 voltage_start.trace_add('write',my_callback)
 
+ttk.Label(BertanFrame, text="Input Flow Rate").grid(row=3, column=4)
+ElectrometerFlow=ttk.Entry(BertanFrame,textvariable = electrometer_flow,width=13).grid(row=3,column=5, padx=10) 
+electrometer_flow.trace_add('write',my_callback)
+
 ttk.Label(BertanFrame, text="Actual Voltage:").grid(row=4,column=4)
 bertan_voltage = Text(BertanFrame,width=10, height=1)
 bertan_voltage.grid(row=4, column=5) #change t0 to BertanVoltage
@@ -168,6 +175,7 @@ info = ljm.getHandleInfo(handle)
 print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
+
 # Define Labjack Inputs
 global electrometer_read; electrometer_read = 'AIN0'
 global dma_read; dma_read = 'AIN1'
@@ -176,20 +184,21 @@ global electrospray_voltage_read; electrospray_voltage_read = 'AIN2'
 global electrospray_current_read; electrospray_current_read = 'AIN3'
 global dma_write; dma_write = 'TDAC0'
 
-def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []):
+def run_program(exact_time = [], time_from_start = [], electrometer_voltage = [], electrometer_conc = []):
+
+    #Pull operating parameters from GUI
+    current_voltage = int(voltage_start.get())
+    step_time = int(streamingInterval.get())
+    flow_rate = int(electrometer_flow.get())
 
     #Datetime
     if not time_from_start:
         global datetime_old; datetime_old = datetime.now()
     elapsed_milliseconds = 0
-    while elapsed_milliseconds < 1000:
+    while elapsed_milliseconds < step_time:
         datetime_new = datetime.now()
         elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds()*1000)
     datetime_old = datetime_old + timedelta(seconds = 1)
-
-    #Pull operating parameters from GUI
-    current_voltage = int(voltage_start.get())
-    step_time = int(streamingInterval.get())
 
     if interrupt:
         return
@@ -204,6 +213,7 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
         electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
         electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
         read_voltage(electrometer_voltage, handle, electrometer_read)
+        electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
 
         #Update GUI
         bertan_voltage.delete('1.0', '1.end')
@@ -215,34 +225,26 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
         
         #Write line to file
         data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage, electrometer_voltage[-1], \
-            electrospray_voltage, electrospray_current])
-
-        #root.after(int(step_time*90/98.8761*100/101.021))
-        # root.update()
+            electrometer_conc[-1], electrospray_voltage, electrospray_current])
 
         #Set voltage
         ljm.eWriteName(handle, dma_write, current_voltage/200)
 
-        #Update graphs
-        # if len(time_from_start) <= 2:
-        #     # global line_1
-        #     # line_1, = 
-        #     figure1.plot(time_from_start, electrometer_voltage, 'b')
         if len(time_from_start) > 100:
             time_from_start.pop(0)
             electrometer_voltage.pop(0)
+            electrometer_conc.pop(0)
             exact_time.pop(0)
             figure1.cla()
-            figure1.plot(time_from_start, electrometer_voltage, 'b')
+            figure1.plot(time_from_start, electrometer_conc, 'b')
             plt.autoscale(True)
         else:
-            figure1.plot(time_from_start, electrometer_voltage, 'b')
+            figure1.plot(time_from_start, electrometer_conc, 'b')
 
-        #canvas = FigureCanvasTkAgg(fig, master=GraphFrame)  # A tk.DrawingArea.
         canvas.draw()
-        # canvas.get_tk_widget().pack()
+        print(1)
         
-    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, electrometer_voltage=electrometer_voltage))
+    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, electrometer_voltage=electrometer_voltage,electrometer_conc=electrometer_conc))
 
 
 
