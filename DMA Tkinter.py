@@ -34,7 +34,7 @@ voltage_stop = StringVar()
 voltage_stop.set(600) #Default Value 500V
 #Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(1500)
+electrometer_flow.set(320)
 
 #TKINTER defining the callback function (observer), allows Tkinter to auto pull in changes to fields
 def my_callback(var,index,mode): 
@@ -74,8 +74,8 @@ def run_program():
     electrometer_conc_avg = []
 
     #Define Labjack Inputs
-    electrometer_read = 'AIN0'
-    dma_read = 'AIN1'
+    electrometer_read = 'AIN12'
+    dma_read = 'AIN4'
     dma_write = 'TDAC0'
 
     #Read in the operating parameters from GUI set earlier
@@ -127,7 +127,7 @@ def run_program():
                 
                 #Take readings from Labjack using defined functions
                 time_tracker(exact_time, time_from_start)
-                read_voltage(dma_voltage, handle, dma_read, 200)
+                read_voltage(dma_voltage, handle, dma_read, 2000)
                 read_voltage(electrometer_voltage, handle, electrometer_read)
                 #Caluclate the Electrometer Concentration
                 electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
@@ -154,7 +154,7 @@ def run_program():
             datetime_old = datetime_old + timedelta(seconds = step_time/1000)
 
             #Set voltage
-            ljm.eWriteName(handle, dma_write, current_voltage/200)
+            #ljm.eWriteName(handle, dma_write, current_voltage/2000)
 
             #Update graphs
             if len(dma_voltage_avg)>2:
@@ -165,7 +165,7 @@ def run_program():
             canvas.get_tk_widget().pack()
 
             #Increment Current Voltage
-            current_voltage += 1
+            current_voltage += 5
         
         #Reset Voltage to 0 at the end of a run
         ljm.eWriteName(handle, dma_write, 0)
@@ -231,7 +231,7 @@ BertanStop=ttk.Entry(BertanFrame,textvariable = voltage_stop,width=13).grid(row=
 voltage_stop.trace_add('write',my_callback)
 
 ttk.Label(BertanFrame, text="Input Flow Rate").grid(row=4, column=4)
-ElectrometerFlow=ttk.Entry(BertanFrame,textvariable = electrometer_flow,width=13).grid(row=4,column=5, padx=10) #change e1 to BertanStop
+ElectrometerFlow=ttk.Entry(BertanFrame,textvariable = electrometer_flow,width=13).grid(row=4,column=5, padx=10) 
 electrometer_flow.trace_add('write',my_callback)
 
 ttk.Label(BertanFrame, text="Actual Voltage:").grid(row=5,column=4)
