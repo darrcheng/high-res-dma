@@ -74,8 +74,8 @@ def run_program():
     electrometer_conc_avg = []
 
     #Define Labjack Inputs
-    electrometer_read = 'AIN12'
-    dma_read = 'AIN4'
+    electrometer_read = 'AIN0'
+    dma_read = 'AIN1'
     dma_write = 'TDAC0'
 
     #Read in the operating parameters from GUI set earlier
@@ -116,14 +116,14 @@ def run_program():
                 elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds()*1000)
             
             ######Take Readings###################################3
-            #Take repeated readings every 50 ms, pausing the program between readings with a while loop
-            #Repeat for number of dwell steps defined by the step time / 50 ms
+            #Take repeated readings every 5 ms, pausing the program between readings with a while loop
+            #Repeat for number of dwell steps defined by the step time / 5 ms
             repeat_readings = 0
-            dwell_steps = int(step_time/50)
+            dwell_steps = int(step_time/5)
             while repeat_readings < dwell_steps:
                 nested_milliseconds = 0
                 while nested_milliseconds < 500:
-                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - 50*repeat_readings)
+                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - 5*repeat_readings)
                 
                 #Take readings from Labjack using defined functions
                 time_tracker(exact_time, time_from_start)
@@ -154,7 +154,7 @@ def run_program():
             datetime_old = datetime_old + timedelta(seconds = step_time/1000)
 
             #Set voltage
-            #ljm.eWriteName(handle, dma_write, current_voltage/2000)
+            ljm.eWriteName(handle, dma_write, current_voltage/2000)
 
             #Update graphs
             if len(dma_voltage_avg)>2:
