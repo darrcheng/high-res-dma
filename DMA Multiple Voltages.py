@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = [163,242,274,299,353]
+global sample_array; sample_array = list(range(0,2000,100))
 
 
 #Declare Streaming Interval, Set Default Value
@@ -181,10 +181,10 @@ print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
 # Define Labjack Inputs
 global electrometer_read; electrometer_read = 'AIN0'
-global dma_read; dma_read = 'AIN1'
-global electrospray_voltage_read; electrospray_voltage_read = 'AIN2'
+global dma_read; dma_read = 'AIN2'
+global electrospray_voltage_read; electrospray_voltage_read = 'AIN5'
             #Set voltage
-global electrospray_current_read; electrospray_current_read = 'AIN3'
+global electrospray_current_read; electrospray_current_read = 'AIN4'
 global dma_write; dma_write = 'TDAC0'
 
 def run_program(exact_time = [], time_from_start = [], electrometer_voltage = [], electrometer_conc = []):
@@ -220,7 +220,7 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
         
         #Take Readings
         time_tracker(exact_time, time_from_start)
-        dma_voltage = ljm.eReadName(handle, dma_read) * 1000 / 5
+        dma_voltage = ljm.eReadName(handle, dma_read) * 10000 / 5
         electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
         electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
         read_voltage(electrometer_voltage, handle, electrometer_read)
@@ -241,7 +241,7 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
             electrometer_conc[-1], electrospray_voltage, electrospray_current])
 
         #Set voltage
-#        ljm.eWriteName(handle, dma_write, current_voltage/200)
+        ljm.eWriteName(handle, dma_write, current_voltage/2000)
 
         if len(time_from_start) > 100:
             time_from_start.pop(0)
@@ -265,6 +265,8 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
 #Read Set Voltages
 BertanVoltSet = ttk.Button(BertanFrame,text="Start", width=5, command = start_run)
 BertanVoltSet.grid(row=2, column=7, padx=10, ipady=1) 
+
+ljm.eWriteName(handle,"AIN0_RESOLUTION_INDEX",8)
 
 
 root.mainloop()
