@@ -78,6 +78,11 @@ def run_program():
     dma_read = 'AIN1'
     dma_write = 'TDAC0'
 
+    #Define Constants
+    time_between_nested = 5
+    voltage_factor_DMA = 10000/5
+    voltage_increment = 5
+
     #Read in the operating parameters from GUI set earlier
     current_voltage = int(voltage_start.get())
     voltage_end = int(voltage_stop.get())
@@ -119,15 +124,15 @@ def run_program():
             #Take repeated readings every 5 ms, pausing the program between readings with a while loop
             #Repeat for number of dwell steps defined by the step time / 5 ms
             repeat_readings = 0
-            dwell_steps = int(step_time/5)
+            dwell_steps = int(step_time/time_between_nested)
             while repeat_readings < dwell_steps:
                 nested_milliseconds = 0
                 while nested_milliseconds < 500:
-                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - 5*repeat_readings)
+                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - time_between_nested*repeat_readings)
                 
                 #Take readings from Labjack using defined functions
                 time_tracker(exact_time, time_from_start)
-                read_voltage(dma_voltage, handle, dma_read, 2000)
+                read_voltage(dma_voltage, handle, dma_read, voltage_factor_DMA)
                 read_voltage(electrometer_voltage, handle, electrometer_read)
                 #Caluclate the Electrometer Concentration
                 electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
@@ -149,12 +154,13 @@ def run_program():
             time_from_start_avg.append(sum(time_from_start[-dwell_steps:])/dwell_steps)
             dma_voltage_avg.append(sum(dma_voltage[-dwell_steps:])/dwell_steps)
             electrometer_conc_avg.append(sum(electrometer_conc[-dwell_steps:])/dwell_steps)
+            print(len(electrometer_conc))
             
             #Increment time
             datetime_old = datetime_old + timedelta(seconds = step_time/1000)
 
             #Set voltage
-            ljm.eWriteName(handle, dma_write, current_voltage/2000)
+            #ljm.eWriteName(handle, dma_write, current_voltage/voltage_factor_DMA)
 
             #Update graphs
             if len(dma_voltage_avg)>2:
@@ -165,7 +171,7 @@ def run_program():
             canvas.get_tk_widget().pack()
 
             #Increment Current Voltage
-            current_voltage += 5
+            current_voltage += voltage_increment
         
         #Reset Voltage to 0 at the end of a run
         ljm.eWriteName(handle, dma_write, 0)
