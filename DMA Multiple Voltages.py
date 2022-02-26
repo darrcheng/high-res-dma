@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = list(range(0,2000,100))
+global sample_array; sample_array = list(range(0,2000,200))
 
 
 #Declare Streaming Interval, Set Default Value
@@ -287,11 +287,11 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
 
 
 
-    if len(time_from_start) > 100:
-        time_from_start.pop(0)
-        electrometer_voltage.pop(0)
-        electrometer_conc.pop(0)
-        exact_time.pop(0)
+    if len(time_from_start_avg) > 100:
+        time_from_start_avg.pop(0)
+        electrometer_voltage_avg.pop(0)
+        electrometer_conc_avg.pop(0)
+        #exact_time_avg.pop(0)
         figure1.cla()
         figure1.plot(time_from_start_avg, electrometer_conc_avg, 'b')
         plt.autoscale(True)
