@@ -68,12 +68,16 @@ def stop_run():
 
 
 def write_header():
-    #Open file
+    #Open Raw File
     with open(run_filename, 'w', newline='') as csvfile:
         data_writer = csv.writer(csvfile, delimiter=',')
         #write header
         data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage', \
             'Electrometer Concentration','Electrospray Voltage', 'Electrospray Current'])
+    #Open Averaged File
+    with open(run_filename_avg, 'a', newline='') as csvfile_avg:
+        data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
+        data_writer_avg.writerow(['Time', 'DMA Voltage',  'Electrometer Concentration', 'Time Since Start', 'Electrometer Voltage'])
 
 def time_tracker(record_start, exact_time, time_list):
     current_time = datetime.now()
@@ -271,9 +275,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
     #open file
     with open(run_filename_avg, 'a', newline='') as csvfile_avg:
         data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
-        
-        data_writer_avg.writerow([time_from_start_avg[-1], electrometer_voltage_avg[-1], electrometer_conc_avg[-1],dma_voltage_avg,exact_time_avg[-1]])
-
+        data_writer_avg.writerow([exact_time_avg[-1], dma_voltage_avg, electrometer_conc_avg[-1], time_from_start_avg[-1], electrometer_voltage_avg[-1]])
 
 
     #Update GUI
