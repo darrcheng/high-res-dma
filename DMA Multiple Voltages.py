@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = list(range(0,2000,200))
+global sample_array; sample_array = list(range(0,2080,80))
 
 
 #Declare Streaming Interval, Set Default Value
@@ -32,7 +32,7 @@ voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(1500)
+electrometer_flow.set(320)
 
 
 #TKINTER defining the callback function (observer) 
@@ -242,7 +242,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
         
             #Take Readings
             time_tracker(record_start, exact_time, time_from_start)
-            dma_voltage = ljm.eReadName(handle, dma_read) * voltage_factor_DMA
+            dma_voltage.append(ljm.eReadName(handle, dma_read) * voltage_factor_DMA)
             electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
             electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
             read_voltage(electrometer_voltage, handle, electrometer_read)
@@ -262,8 +262,9 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
 
 
     #Average Readings for graphing and Summary CSV
+    exact_time_avg.append(exact_time[0])
     time_from_start_avg.append(sum(time_from_start)/dwell_steps)
-    #dma_voltage_avg.append(sum(dma_voltage)/dwell_steps)
+    dma_voltage_avg = (sum(dma_voltage)/dwell_steps)
     electrometer_voltage_avg.append(sum(electrometer_voltage)/dwell_steps)
     electrometer_conc_avg.append(sum(electrometer_conc)/dwell_steps)
 
@@ -271,7 +272,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
     with open(run_filename_avg, 'a', newline='') as csvfile_avg:
         data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
         
-        data_writer_avg.writerow([time_from_start_avg[-1], electrometer_voltage_avg[-1], electrometer_conc_avg[-1]])
+        data_writer_avg.writerow([time_from_start_avg[-1], electrometer_voltage_avg[-1], electrometer_conc_avg[-1],dma_voltage_avg,exact_time_avg[-1]])
 
 
 
@@ -279,7 +280,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
     BertanStart.delete('1.0', '1.end')
     BertanStart.insert('1.0',"%.2f" % current_voltage)
     bertan_voltage.delete('1.0', '1.end')
-    bertan_voltage.insert('1.0',"%.2f" % dma_voltage)
+    bertan_voltage.insert('1.0',"%.2f" % dma_voltage_avg)
     electrometer_output.delete('1.0', '1.end')
     electrometer_output.insert('1.0',"%.2f" % electrometer_voltage_avg[-1])
     electrospray_output.delete('1.0', '1.end')
@@ -291,7 +292,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
         time_from_start_avg.pop(0)
         electrometer_voltage_avg.pop(0)
         electrometer_conc_avg.pop(0)
-        #exact_time_avg.pop(0)
+        exact_time_avg.pop(0)
         figure1.cla()
         figure1.plot(time_from_start_avg, electrometer_conc_avg, 'b')
         plt.autoscale(True)
