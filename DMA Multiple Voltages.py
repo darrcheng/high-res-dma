@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = list(range(0,2080,80))
+global sample_array; sample_array = range(0,2080,80)
 
 
 #Declare Streaming Interval, Set Default Value
@@ -32,7 +32,7 @@ voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(320)
+electrometer_flow.set(324)
 
 
 #TKINTER defining the callback function (observer) 
@@ -45,7 +45,7 @@ def set_voltage(voltage, handle, name):
     voltage_output = voltage * signal_factor
     #Labjack code here to set voltage
     
-def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
+def read_voltage(instrument, handle, name = 'AIN1', scaling = 1):
      result = ljm.eReadName(handle, name)
      instrument = instrument.append(result * scaling) 
 
@@ -180,10 +180,10 @@ print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
 
-ljm.eWriteName(handle,"AIN0_RESOLUTION_INDEX",8)
+ljm.eWriteName(handle,"AIN1_RESOLUTION_INDEX",8)
 
 # Define Labjack Inputs
-global electrometer_read; electrometer_read = 'AIN0'
+global electrometer_read; electrometer_read = 'AIN1'
 global dma_read; dma_read = 'AIN2'
 global electrospray_voltage_read; electrospray_voltage_read = 'AIN5'
         #Set voltage
