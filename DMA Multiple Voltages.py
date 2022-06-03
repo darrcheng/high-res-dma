@@ -21,7 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = list(range(0,2000,100))
+global sample_array; sample_array = range(0,2080,80)
 
 
 #Declare Streaming Interval, Set Default Value
@@ -32,7 +32,7 @@ voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(1500)
+electrometer_flow.set(324)
 
 
 #TKINTER defining the callback function (observer) 
@@ -45,7 +45,7 @@ def set_voltage(voltage, handle, name):
     voltage_output = voltage * signal_factor
     #Labjack code here to set voltage
     
-def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
+def read_voltage(instrument, handle, name = 'AIN1', scaling = 1):
      result = ljm.eReadName(handle, name)
      instrument = instrument.append(result * scaling) 
 
@@ -53,8 +53,9 @@ def start_run():
     BertanVoltSet.configure(text='Stop', command=stop_run)
     global interrupt; interrupt = False
     global run_filename; run_filename = create_filename()
+    global run_filename_avg; run_filename_avg = run_filename[:-4] + '_avg.csv'
     write_header()
-    run_program(exact_time = [], time_from_start = [], electrometer_voltage = [])
+    run_program(record_start = datetime.now())
     figure1.cla()
 
 
@@ -67,23 +68,22 @@ def stop_run():
 
 
 def write_header():
-    #Open file
+    #Open Raw File
     with open(run_filename, 'w', newline='') as csvfile:
         data_writer = csv.writer(csvfile, delimiter=',')
         #write header
         data_writer.writerow(['Time', 'Time Since Start', 'DMA Voltage', 'Electrometer Voltage', \
             'Electrometer Concentration','Electrospray Voltage', 'Electrospray Current'])
+    #Open Averaged File
+    with open(run_filename_avg, 'a', newline='') as csvfile_avg:
+        data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
+        data_writer_avg.writerow(['Time', 'DMA Voltage',  'Electrometer Concentration', 'Time Since Start', 'Electrometer Voltage'])
 
-def time_tracker(exact_time, time_list):
+def time_tracker(record_start, exact_time, time_list):
     current_time = datetime.now()
     exact_time.append(current_time)
-    if not time_list:
-        time_list.append(0)
-        global record_start
-        record_start = exact_time[0]
-    else:
-        time_difference = current_time - record_start
-        time_list.append(time_difference.total_seconds())
+    time_difference = current_time - record_start
+    time_list.append(time_difference.total_seconds())
 
 def create_filename():
     start_time = datetime.now()
@@ -173,90 +173,137 @@ electrometer_output.grid(row=6, column=5) #change t1 to ElectroVoltage
 electrometer_output.insert('1.0', '0.00')
 ttk.Label(BertanFrame, text="Volts").grid(row=5, column=6, padx=0)
 
-#Open Labjack
+############ Open Labjack ##############################
 handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
 info = ljm.getHandleInfo(handle)
 print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
+
+ljm.eWriteName(handle,"AIN1_RESOLUTION_INDEX",8)
+
 # Define Labjack Inputs
-global electrometer_read; electrometer_read = 'AIN0'
+global electrometer_read; electrometer_read = 'AIN1'
 global dma_read; dma_read = 'AIN2'
 global electrospray_voltage_read; electrospray_voltage_read = 'AIN5'
-            #Set voltage
+        #Set voltage
 global electrospray_current_read; electrospray_current_read = 'AIN4'
 global dma_write; dma_write = 'TDAC0'
 
-def run_program(exact_time = [], time_from_start = [], electrometer_voltage = [], electrometer_conc = []):
+
+########################### Main Program ###############################
+
+def run_program(record_start, datetime_old = None, exact_time_avg = [], time_from_start_avg = [], electrometer_voltage_avg = [], electrometer_conc_avg = []):
     
     #Pull operating parameters from GUI
     step_time = int(streamingInterval.get())
     flow_rate = int(electrometer_flow.get())
 
+    #Other Constants
+    voltage_factor_DMA = 10000/5
+    repeat_samples = 150
+    time_between_nested = 10
+
+    # Define Lists
+    exact_time = []
+    time_from_start = []
+    dma_voltage = []
+    electrospray_voltage = []
+    electrospray_current = []
+    electrometer_voltage = []
+    electrometer_conc = []
 
     #Datetime
-    if not time_from_start:
-        global datetime_old; datetime_old = datetime.now()
+    if datetime_old == None:
+        datetime_old = datetime.now()
         global sample_index; sample_index = 1
     elapsed_milliseconds = 0
     while elapsed_milliseconds < step_time:
         datetime_new = datetime.now()
         elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds()*1000)
+
     datetime_old = datetime_old + timedelta(seconds = 1)
     sample_index += 1
-    sample_number = int(sample_index/150)
+    sample_number = int(sample_index/repeat_samples)
     if sample_number > len(sample_array)-1:
         stop_run()
 
     current_voltage = sample_array[sample_number]
 
-
     if interrupt:
         return
 
+    repeat_readings = 0
+    dwell_steps = int(step_time/time_between_nested)
+    while repeat_readings < dwell_steps:
+        nested_milliseconds = 0
+        # while nested_milliseconds < 20:
+        #     nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - time_between_nested*repeat_readings)
+
+        #open file
+        with open(run_filename, 'a', newline='') as csvfile:
+            data_writer = csv.writer(csvfile, delimiter=',')
+        
+            #Take Readings
+            time_tracker(record_start, exact_time, time_from_start)
+            dma_voltage.append(ljm.eReadName(handle, dma_read) * voltage_factor_DMA)
+            electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
+            electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
+            read_voltage(electrometer_voltage, handle, electrometer_read)
+            electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
+
+            
+            #Write line to file
+            data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage, electrometer_voltage[-1], \
+                electrometer_conc[-1], electrospray_voltage, electrospray_current])
+
+        #Update GUI and increment
+        #root.update()
+        repeat_readings += 1
+
+    #Set voltage
+    ljm.eWriteName(handle, dma_write, current_voltage/voltage_factor_DMA)
+
+
+    #Average Readings for graphing and Summary CSV
+    exact_time_avg.append(exact_time[0])
+    time_from_start_avg.append(sum(time_from_start)/dwell_steps)
+    dma_voltage_avg = (sum(dma_voltage)/dwell_steps)
+    electrometer_voltage_avg.append(sum(electrometer_voltage)/dwell_steps)
+    electrometer_conc_avg.append(sum(electrometer_conc)/dwell_steps)
+
     #open file
-    with open(run_filename, 'a', newline='') as csvfile:
-        data_writer = csv.writer(csvfile, delimiter=',')
+    with open(run_filename_avg, 'a', newline='') as csvfile_avg:
+        data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
+        data_writer_avg.writerow([exact_time_avg[-1], dma_voltage_avg, electrometer_conc_avg[-1], time_from_start_avg[-1], electrometer_voltage_avg[-1]])
+
+
+    #Update GUI
+    BertanStart.delete('1.0', '1.end')
+    BertanStart.insert('1.0',"%.2f" % current_voltage)
+    bertan_voltage.delete('1.0', '1.end')
+    bertan_voltage.insert('1.0',"%.2f" % dma_voltage_avg)
+    electrometer_output.delete('1.0', '1.end')
+    electrometer_output.insert('1.0',"%.2f" % electrometer_voltage_avg[-1])
+    electrospray_output.delete('1.0', '1.end')
+    electrospray_output.insert('1.0',"%.2f" % electrospray_current)
+
+
+
+    if len(time_from_start_avg) > 100:
+        time_from_start_avg.pop(0)
+        electrometer_voltage_avg.pop(0)
+        electrometer_conc_avg.pop(0)
+        exact_time_avg.pop(0)
+        figure1.cla()
+        figure1.plot(time_from_start_avg, electrometer_conc_avg, 'b')
+        plt.autoscale(True)
+    else:
+        figure1.plot(time_from_start_avg, electrometer_conc_avg, 'b')
+
+    canvas.draw()
         
-        #Take Readings
-        time_tracker(exact_time, time_from_start)
-        dma_voltage = ljm.eReadName(handle, dma_read) * 10000 / 5
-        electrospray_voltage = ljm.eReadName(handle,electrospray_voltage_read) * 5000/5
-        electrospray_current = ljm.eReadName(handle,electrospray_current_read) * 0.005/5
-        read_voltage(electrometer_voltage, handle, electrometer_read)
-        electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
-
-        #Update GUI
-        BertanStart.delete('1.0', '1.end')
-        BertanStart.insert('1.0',"%.2f" % current_voltage)
-        bertan_voltage.delete('1.0', '1.end')
-        bertan_voltage.insert('1.0',"%.2f" % dma_voltage)
-        electrometer_output.delete('1.0', '1.end')
-        electrometer_output.insert('1.0',"%.2f" % electrometer_voltage[-1])
-        electrospray_output.delete('1.0', '1.end')
-        electrospray_output.insert('1.0',"%.2f" % electrospray_current)
-        
-        #Write line to file
-        data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage, electrometer_voltage[-1], \
-            electrometer_conc[-1], electrospray_voltage, electrospray_current])
-
-        #Set voltage
-        ljm.eWriteName(handle, dma_write, current_voltage/2000)
-
-        if len(time_from_start) > 100:
-            time_from_start.pop(0)
-            electrometer_voltage.pop(0)
-            electrometer_conc.pop(0)
-            exact_time.pop(0)
-            figure1.cla()
-            figure1.plot(time_from_start, electrometer_conc, 'b')
-            plt.autoscale(True)
-        else:
-            figure1.plot(time_from_start, electrometer_conc, 'b')
-
-        canvas.draw()
-        
-    root.after(1, lambda:run_program(exact_time=exact_time, time_from_start=time_from_start, electrometer_voltage=electrometer_voltage,electrometer_conc=electrometer_conc))
+    root.after(1, lambda:run_program(record_start = record_start, datetime_old = datetime_old, exact_time_avg=exact_time_avg, time_from_start_avg=time_from_start_avg, electrometer_voltage_avg=electrometer_voltage_avg,electrometer_conc_avg=electrometer_conc_avg))
 
 
 
@@ -266,7 +313,6 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
 BertanVoltSet = ttk.Button(BertanFrame,text="Start", width=5, command = start_run)
 BertanVoltSet.grid(row=2, column=7, padx=10, ipady=1) 
 
-ljm.eWriteName(handle,"AIN0_RESOLUTION_INDEX",8)
 
 
 root.mainloop()
