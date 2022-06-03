@@ -45,7 +45,7 @@ def set_voltage(voltage, handle, name):
     voltage_output = voltage * signal_factor
     #Labjack code here to set voltage
     
-def read_voltage(instrument, handle, name = 'AIN1', scaling = 1):
+def read_voltage(instrument, handle, name = 'AIN2', scaling = 1):
      result = ljm.eReadName(handle, name)
      instrument = instrument.append(result * scaling) 
 
@@ -77,7 +77,7 @@ def write_header():
     #Open Averaged File
     with open(run_filename_avg, 'a', newline='') as csvfile_avg:
         data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
-        data_writer_avg.writerow(['Time', 'DMA Voltage',  'Electrometer Concentration', 'Time Since Start', 'Electrometer Voltage'])
+        data_writer_avg.writerow(['Time', 'DMA Voltage',  'Electrometer Concentration', 'Time Since Start', 'Electrometer Voltage','DMA Set Voltage'])
 
 def time_tracker(record_start, exact_time, time_list):
     current_time = datetime.now()
@@ -180,11 +180,11 @@ print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
 
-ljm.eWriteName(handle,"AIN1_RESOLUTION_INDEX",8)
+ljm.eWriteName(handle,"AIN2_RESOLUTION_INDEX",8)
 
 # Define Labjack Inputs
-global electrometer_read; electrometer_read = 'AIN1'
-global dma_read; dma_read = 'AIN2'
+global electrometer_read; electrometer_read = 'AIN2'
+global dma_read; dma_read = 'AIN1'
 global electrospray_voltage_read; electrospray_voltage_read = 'AIN5'
         #Set voltage
 global electrospray_current_read; electrospray_current_read = 'AIN4'
@@ -275,7 +275,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
     #open file
     with open(run_filename_avg, 'a', newline='') as csvfile_avg:
         data_writer_avg = csv.writer(csvfile_avg, delimiter=',')
-        data_writer_avg.writerow([exact_time_avg[-1], dma_voltage_avg, electrometer_conc_avg[-1], time_from_start_avg[-1], electrometer_voltage_avg[-1]])
+        data_writer_avg.writerow([exact_time_avg[-1], dma_voltage_avg, electrometer_conc_avg[-1], time_from_start_avg[-1], electrometer_voltage_avg[-1], current_voltage])
 
 
     #Update GUI
@@ -284,7 +284,7 @@ def run_program(record_start, datetime_old = None, exact_time_avg = [], time_fro
     bertan_voltage.delete('1.0', '1.end')
     bertan_voltage.insert('1.0',"%.2f" % dma_voltage_avg)
     electrometer_output.delete('1.0', '1.end')
-    electrometer_output.insert('1.0',"%.2f" % electrometer_voltage_avg[-1])
+    electrometer_output.insert('1.0',"%.2f" % electrometer_conc_avg[-1])
     electrospray_output.delete('1.0', '1.end')
     electrospray_output.insert('1.0',"%.2f" % electrospray_current)
 
