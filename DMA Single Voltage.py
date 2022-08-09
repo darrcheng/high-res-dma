@@ -236,10 +236,10 @@ def run_program(exact_time = [], time_from_start = [], electrometer_voltage = []
             electrometer_conc.pop(0)
             exact_time.pop(0)
             figure1.cla()
-            figure1.plot(time_from_start, electrometer_conc, 'b')
+            figure1.plot(time_from_start, electrometer_voltage, 'b')
             plt.autoscale(True)
         else:
-            figure1.plot(time_from_start, electrometer_conc, 'b')
+            figure1.plot(time_from_start, electrometer_voltage, 'b')
 
         canvas.draw()
         print(1)

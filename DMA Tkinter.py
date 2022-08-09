@@ -31,10 +31,10 @@ voltage_start = StringVar()
 voltage_start.set(0) #Default Value 0V 
 #Declare Voltage Stop, Set Default Value
 voltage_stop = StringVar()
-voltage_stop.set(600) #Default Value 500V
+voltage_stop.set(2000) #Default Value 500V
 #Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(320)
+electrometer_flow.set(326)
 
 #TKINTER defining the callback function (observer), allows Tkinter to auto pull in changes to fields
 def my_callback(var,index,mode): 
@@ -46,7 +46,7 @@ def my_callback(var,index,mode):
 ## Other Functions
 
 #Function to read the voltage from the Labjack, includes a scaling factor for conversions    
-def read_voltage(instrument, handle, name = 'AIN0', scaling = 1):
+def read_voltage(instrument, handle, name = 'AIN2', scaling = 1):
      result = ljm.eReadName(handle, name)
      instrument = instrument.append(result * scaling) 
 
@@ -74,14 +74,9 @@ def run_program():
     electrometer_conc_avg = []
 
     #Define Labjack Inputs
-    electrometer_read = 'AIN0'
+    electrometer_read = 'AIN2'
     dma_read = 'AIN1'
     dma_write = 'TDAC0'
-
-    #Define Constants
-    time_between_nested = 5
-    voltage_factor_DMA = 10000/5
-    voltage_increment = 5
 
     #Read in the operating parameters from GUI set earlier
     current_voltage = int(voltage_start.get())
@@ -124,15 +119,15 @@ def run_program():
             #Take repeated readings every 5 ms, pausing the program between readings with a while loop
             #Repeat for number of dwell steps defined by the step time / 5 ms
             repeat_readings = 0
-            dwell_steps = int(step_time/time_between_nested)
+            dwell_steps = int(step_time/5)
             while repeat_readings < dwell_steps:
                 nested_milliseconds = 0
                 while nested_milliseconds < 500:
-                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - time_between_nested*repeat_readings)
+                    nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - 5*repeat_readings)
                 
                 #Take readings from Labjack using defined functions
                 time_tracker(exact_time, time_from_start)
-                read_voltage(dma_voltage, handle, dma_read, voltage_factor_DMA)
+                read_voltage(dma_voltage, handle, dma_read, 2000)
                 read_voltage(electrometer_voltage, handle, electrometer_read)
                 #Caluclate the Electrometer Concentration
                 electrometer_conc.append(electrometer_voltage[-1]*6.242e6*60/flow_rate)
@@ -140,9 +135,7 @@ def run_program():
                 #Update GUI
                 bertan_voltage.delete('1.0', '1.end')
                 bertan_voltage.insert('1.0',"%.2f" % dma_voltage[-1])
-                electrometer_output.delete('1.0', '1.end')
-                electrometer_output.insert('1.0',"%.2f" % electrometer_voltage[-1])
-
+                
                 #Write line to file
                 data_writer.writerow([exact_time[-1], time_from_start[-1], dma_voltage[-1], electrometer_voltage[-1],electrometer_conc[-1]])
 
@@ -154,15 +147,18 @@ def run_program():
             time_from_start_avg.append(sum(time_from_start[-dwell_steps:])/dwell_steps)
             dma_voltage_avg.append(sum(dma_voltage[-dwell_steps:])/dwell_steps)
             electrometer_conc_avg.append(sum(electrometer_conc[-dwell_steps:])/dwell_steps)
-            print(len(electrometer_conc))
             
             #Increment time
             datetime_old = datetime_old + timedelta(seconds = step_time/1000)
 
             #Set voltage
-            #ljm.eWriteName(handle, dma_write, current_voltage/voltage_factor_DMA)
+            ljm.eWriteName(handle, dma_write, current_voltage/2000)
 
             #Update graphs
+            electrometer_output.delete('1.0', '1.end')
+            electrometer_output.insert('1.0',"%.2f" % electrometer_conc_avg[-1])
+
+
             if len(dma_voltage_avg)>2:
                 figure1.plot(dma_voltage_avg[-2:], electrometer_conc_avg[-2:], 'b')
             else:
@@ -171,7 +167,7 @@ def run_program():
             canvas.get_tk_widget().pack()
 
             #Increment Current Voltage
-            current_voltage += voltage_increment
+            current_voltage += 1
         
         #Reset Voltage to 0 at the end of a run
         ljm.eWriteName(handle, dma_write, 0)
@@ -265,6 +261,7 @@ info = ljm.getHandleInfo(handle)
 print("Opened a LabJack with Device type: %i, Connection type: %i,\n"
     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i" %
     (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5]))
+ljm.eWriteName(handle,"AIN2_RESOLUTION_INDEX",8)
 
 root.mainloop()
 

@@ -21,7 +21,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 #Set Sampling Voltages
-global sample_array; sample_array = range(0,2080,80)
+global sample_array; #sample_array = range(0,2551,150)
+sample_array = [0,366,798,1446,2410]
 
 
 #Declare Streaming Interval, Set Default Value
