@@ -25,7 +25,8 @@ from matplotlib.figure import Figure
 # Set Sampling Voltages
 global sample_array
 # sample_array = range(0,2551,150)
-sample_array = [0, 366, 798, 1446, 2410]
+# sample_array = [0, 366, 798, 1446, 2410]
+sample_array = [0, 366]
 
 
 # Declare Streaming Interval, Set Default Value
@@ -65,9 +66,10 @@ def start_run():
     global run_filename_avg
     run_filename_avg = run_filename[:-4] + "_avg.csv"
     write_header()
-    run_program(record_start=datetime.now())
     figure1.cla()
-
+    run_program(record_start=datetime.now(),datetime_old=None,exact_time_avg=[],time_from_start_avg=[],electrometer_voltage_avg=[],
+    electrometer_conc_avg=[],)
+    
 
 def stop_run():
     global interrupt
@@ -276,15 +278,15 @@ def run_program(
         elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds() * 1000)
 
     datetime_old = datetime_old + timedelta(seconds=1)
-    sample_index += 1
     sample_number = int(sample_index / repeat_samples)
     if sample_number > len(sample_array) - 1:
         stop_run()
 
-    current_voltage = sample_array[sample_number]
-
     if interrupt:
         return
+
+    current_voltage = sample_array[sample_number]
+    sample_index += 1
 
     repeat_readings = 0
     dwell_steps = int(step_time / time_between_nested)
