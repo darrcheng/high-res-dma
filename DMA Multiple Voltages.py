@@ -2,6 +2,7 @@ from labjack import ljm
 import struct
 from datetime import datetime  # Pulls current time from system
 from datetime import timedelta  # Calculates difference in time
+import numpy as np
 
 from tkinter import *
 from tkinter import ttk
@@ -25,7 +26,10 @@ from matplotlib.figure import Figure
 # Set Sampling Voltages
 global sample_array
 # sample_array = range(0,2551,150)
-sample_array = [0, 366, 798, 1446, 2410]
+# sample_array = [0, 366, 798, 1446, 2410]
+sample_array = np.logspace(
+    np.log10(1.2), np.log10(7.2), 20
+)  # convert to voltage before starting
 
 
 # Declare Streaming Interval, Set Default Value
