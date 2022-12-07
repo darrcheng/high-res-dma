@@ -26,11 +26,15 @@ from matplotlib.figure import Figure
 # Set Sampling Voltages
 global sample_array
 # sample_array = range(0,2551,150)
-# sample_array = [0, 366, 798, 1446, 2410]
-sample_array = np.logspace(
-    np.log10(1.2), np.log10(7.2), 20
-)  # convert to voltage before starting
-
+sample_array = [104, 136, 168, 200, 232, 264, 296, 328, 360, 480, 1000,1960]
+# sample_array = np.logspace(
+#     np.log10(180), np.log10(2500), 15
+# )  # convert to voltage before starting
+# sample_array = np.logspace(
+#     np.log10(148), np.log10(2992), 20
+# )  # convert to voltage before starting
+sample_array = np.insert(sample_array,0,0)
+print(sample_array)
 
 # Declare Streaming Interval, Set Default Value
 streamingInterval = StringVar()
@@ -40,7 +44,7 @@ voltage_start = StringVar()
 voltage_start.set(0)  # Default Value 0V
 # Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(324)
+electrometer_flow.set(322)
 
 
 # TKINTER defining the callback function (observer)
@@ -230,6 +234,8 @@ print(
 )
 
 ljm.eWriteName(handle, "AIN2_RESOLUTION_INDEX", 8)
+ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
+
 
 # Define Labjack Inputs
 global electrometer_read
@@ -294,6 +300,7 @@ def run_program(
     if interrupt:
         return
 
+    previous_voltage = -1
     current_voltage = sample_array[sample_number]
     sample_index += 1
 
@@ -340,7 +347,10 @@ def run_program(
         repeat_readings += 1
 
     # Set voltage
-    ljm.eWriteName(handle, dma_write, current_voltage / voltage_factor_DMA)
+    if current_voltage != previous_voltage:
+        ljm.eWriteName(handle, dma_write, current_voltage / voltage_factor_DMA)
+        previous_voltage = current_voltage
+    
 
     # Average Readings for graphing and Summary CSV
     exact_time_avg.append(exact_time[0])

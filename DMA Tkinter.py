@@ -36,7 +36,7 @@ voltage_stop = StringVar()
 voltage_stop.set(2000)  # Default Value 500V
 # Input Electrometer Flow Rate
 electrometer_flow = StringVar()
-electrometer_flow.set(326)
+electrometer_flow.set(322)
 
 # TKINTER defining the callback function (observer), allows Tkinter to auto pull in changes to fields
 def my_callback(var, index, mode):
@@ -88,6 +88,10 @@ def run_program():
     voltage_end = int(voltage_stop.get())
     step_time = int(streamingInterval.get())
     flow_rate = int(electrometer_flow.get())
+
+    # Define DMA Parameters
+    dma_power_supply = 10000
+    dma_read_factor = dma_power_supply/5
 
     # Create Filename strings used later when writing CSVs
     start_time = datetime.now()
@@ -146,7 +150,7 @@ def run_program():
 
                 # Take readings from Labjack using defined functions
                 time_tracker(exact_time, time_from_start)
-                read_voltage(dma_voltage, handle, dma_read, 2000)
+                read_voltage(dma_voltage, handle, dma_read, dma_read_factor)
                 read_voltage(electrometer_voltage, handle, electrometer_read)
                 # Caluclate the Electrometer Concentration
                 electrometer_conc.append(
@@ -185,7 +189,7 @@ def run_program():
             datetime_old = datetime_old + timedelta(seconds=step_time / 1000)
 
             # Set voltage
-            ljm.eWriteName(handle, dma_write, current_voltage / 2000)
+            ljm.eWriteName(handle, dma_write, current_voltage / dma_read_factor)
 
             # Update graphs
             electrometer_output.delete("1.0", "1.end")
@@ -310,5 +314,6 @@ print(
     % (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5])
 )
 ljm.eWriteName(handle, "AIN2_RESOLUTION_INDEX", 8)
+# ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
 
 root.mainloop()
