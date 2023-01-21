@@ -3,52 +3,28 @@ import struct
 from datetime import datetime  # Pulls current time from system
 from datetime import timedelta  # Calculates difference in time
 import numpy as np
-
 from tkinter import *
 from tkinter import ttk
-
-root = Tk()
-
-# from random import random  # TEMP
 import random
-
 import threading
 import time
-
 import csv
-
 import matplotlib
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import configparser
 
-# Set Sampling Voltages
-global sample_array
-# sample_array = range(0,2551,150)
-sample_array = [104, 136, 168, 200, 232, 264, 296, 328, 360, 480, 1000, 1960]
-# sample_array = np.logspace(
-#     np.log10(180), np.log10(2500), 15
-# )  # convert to voltage before starting
-# sample_array = np.logspace(
-#     np.log10(148), np.log10(2992), 20
-# )  # convert to voltage before starting
-sample_array = np.insert(sample_array, 0, 0)
-print(sample_array)
+root = Tk()
 
-# Declare Streaming Interval, Set Default Value
-streamingInterval = StringVar()
-streamingInterval.set(1000)  # Default Value 1000ms
-# Declare Voltage Start, Set Default Value
-voltage_start = StringVar()
-voltage_start.set(0)  # Default Value 0V
-
+config_file = configparser.ConfigParser()
+config_file.read(r"dma_config.ini")
 
 # TKINTER defining the callback function (observer)
 def my_callback(var, index, mode):
-    print("Streaming intverval: {}".format(streamingInterval.get()))
-    print("Start Voltage: {}".format(voltage_start.get()))
+    print("Blower Speed: {}".format(blower_set.get()))
 
 
 def set_voltage(voltage, handle, name):
@@ -67,20 +43,69 @@ def start_run():
     BertanVoltSet.configure(text="Stop", command=stop_run)
     global interrupt
     interrupt = False
+
     global run_filename
     run_filename = create_filename()
     global run_filename_avg
     run_filename_avg = run_filename[:-4] + "_avg.csv"
     write_header()
+
     figure1.cla()
+
+    run_settings = create_run_settings()
+
     run_program(
-        record_start=datetime.now(),
+        datetime.now(),
+        run_settings,
         datetime_old=None,
         exact_time_avg=[],
+        dma_voltage_avg=[],
         time_from_start_avg=[],
         electrometer_voltage_avg=[],
         electrometer_conc_avg=[],
     )
+
+
+def create_run_settings():
+    run_settings = {
+        "dma_mode": dma_mode.get(),
+        "step_time": streamingInterval.get(),
+        "flow_rate": electrometer_flow.get(),
+        "ms_between_nested": int(config_file["general"]["ms_between_nested"]),
+        "electrometer_read": config_file["lj_inputs"]["electrometer_read"],
+        "dma_read": config_file["lj_inputs"]["dma_read"],
+        "electrospray_voltage_read": config_file["lj_inputs"][
+            "electrospray_voltage_read"
+        ],
+        "electrospray_current_read": config_file["lj_inputs"][
+            "electrospray_current_read"
+        ],
+        "dma_write": config_file["lj_inputs"]["dma_write"],
+    }
+
+    if dma_mode.get() == "multi_voltage":
+        voltage_list = multi_voltage_list.get(1.0, END)
+        test1 = list(map(int, voltage_list.split(",")))
+
+        run_settings.update(
+            {
+                "num_measurements": repeat_measure.get(),
+                "voltage_list": list(map(int, voltage_list.split(","))),
+            }
+        )
+
+    if dma_mode.get() == "voltage_scan":
+        run_settings.update(
+            {
+                "scan_start": scan_start_volt.get(),
+                "scan_end": scan_end_volt.get(),
+                "scan_step": scan_volt_step.get(),
+            }
+        )
+
+    if dma_mode.get() == "single_voltage":
+        run_settings.update({"set_volt": single_voltage_value.get()})
+    return run_settings
 
 
 def stop_run():
@@ -178,15 +203,6 @@ ttk.Label(blower_control_frame, text="Blower RPM: ").grid(row=1, column=2, padx=
 blower_actual = Text(blower_control_frame, width=10, height=1)
 blower_actual.grid(row=1, column=3, pady=2)
 
-# electrometer_flow = StringVar()
-# electrometer_flow.set(322)
-# ttk.Label(FreqFrame, text="Input Flow Rate: ").grid(row=1, column=0, sticky="W")
-# ElectrometerFlow = ttk.Entry(FreqFrame, textvariable=electrometer_flow, width=13).grid(
-#     row=1, column=1, sticky="W"
-# )
-# electrometer_flow.trace_add("write", my_callback)
-
-
 # Program Header
 voltage_control_frame = ttk.Frame(root)
 voltage_control_frame.grid(row=1, column=0)
@@ -205,8 +221,8 @@ gui_filename.grid(row=0, column=1, pady=2)
 gui_filename.insert("1.0", "No Filename")
 
 # Input Electrometer Flow Rate
-electrometer_flow = StringVar()
-electrometer_flow.set(322)
+electrometer_flow = IntVar()
+electrometer_flow.set(config_file["general"]["electrometer_flow"])
 ttk.Label(FreqFrame, text="Input Flow Rate: ").grid(row=1, column=0, sticky="W")
 ElectrometerFlow = ttk.Entry(FreqFrame, textvariable=electrometer_flow, width=13).grid(
     row=1, column=1, sticky="W"
@@ -215,17 +231,17 @@ electrometer_flow.trace_add("write", my_callback)
 
 
 # Data logging frequency entry box and labels
+streamingInterval = IntVar()
+streamingInterval.set(config_file["general"]["data_frequency"])
 ttk.Label(FreqFrame, text="Data frequency (ms): ").grid(row=2, column=0, sticky="W")
 LoggingFreq = ttk.Entry(FreqFrame, textvariable=streamingInterval, width=13).grid(
     row=2, column=1, sticky="w"
-)  # Change from boo to LoggingFreq
+)
 streamingInterval.trace_add("write", my_callback)
-
 
 # Frame for setting Bertan Voltages
 BertanFrame = ttk.Frame(voltage_control_frame)
 BertanFrame.grid(row=2, column=0, sticky="NW", pady=5)
-
 
 # Radiobuttons for selecting mode
 dma_mode = StringVar()
@@ -237,12 +253,18 @@ scan_frame.grid(row=1, column=0, sticky="N", padx=5)
 voltage_scan = ttk.Radiobutton(
     scan_frame, text="Voltage Scan", variable=dma_mode, value="voltage_scan"
 ).grid(row=0, column=0, columnspan=2, pady=(0, 5))
-scan_start_volt = StringVar()
+scan_start_volt = IntVar()
+scan_start_volt.set(config_file["voltage_scan"]["start_voltage"])
 ttk.Label(scan_frame, text="Start Voltage: ").grid(row=1, column=0)
 ttk.Entry(scan_frame, textvariable=scan_start_volt, width=13).grid(row=1, column=1)
-scan_end_volt = StringVar()
+scan_end_volt = IntVar()
+scan_end_volt.set(config_file["voltage_scan"]["end_voltage"])
 ttk.Label(scan_frame, text="End Voltage: ").grid(row=2, column=0)
 ttk.Entry(scan_frame, textvariable=scan_end_volt, width=13).grid(row=2, column=1)
+scan_volt_step = IntVar()
+scan_volt_step.set(config_file["voltage_scan"]["voltage_step"])
+ttk.Label(scan_frame, text="Voltage Step: ").grid(row=3, column=0)
+ttk.Entry(scan_frame, textvariable=scan_volt_step, width=13).grid(row=3, column=1)
 
 # DMA Single Voltage Options
 single_voltage_frame = ttk.Frame(BertanFrame)
@@ -253,7 +275,8 @@ single_voltage = ttk.Radiobutton(
     variable=dma_mode,
     value="single_voltage",
 ).grid(row=0, column=0, columnspan=2, pady=(0, 5))
-single_voltage_value = StringVar()
+single_voltage_value = IntVar()
+single_voltage_value.set(config_file["single_voltage"]["voltage"])
 ttk.Label(single_voltage_frame, text="Voltage: ").grid(row=1, column=0)
 ttk.Entry(single_voltage_frame, textvariable=single_voltage_value, width=13).grid(
     row=1, column=1
@@ -269,45 +292,44 @@ multi_voltage = ttk.Radiobutton(
     value="multi_voltage",
 ).grid(row=0, column=0, columnspan=2, pady=(0, 5))
 ttk.Label(multi_voltage_frame, text="Voltages: ").grid(row=1, column=0)
-multi_voltage_list = Text(multi_voltage_frame, width=13, height=3)
+multi_voltage_list = Text(multi_voltage_frame, width=10, height=3)
+multi_voltage_list.insert(1.0, config_file["multiple_voltages"]["set_voltages"])
 multi_voltage_list.grid(row=1, column=1, pady=2)
 ys = ttk.Scrollbar(
     multi_voltage_frame, orient="vertical", command=multi_voltage_list.yview
 )
 multi_voltage_list["yscrollcommand"] = ys.set
 ys.grid(column=2, row=1, sticky="ns")
-repeat_measure = StringVar()
+repeat_measure = IntVar()
+repeat_measure.set(config_file["multiple_voltages"]["repeat_samples"])
 ttk.Label(multi_voltage_frame, text="# Measurements : ").grid(row=2, column=0)
 ttk.Entry(multi_voltage_frame, textvariable=repeat_measure, width=13).grid(
     row=2, column=1
 )
 
-
 # Monitoring
 monitor_frame = ttk.Frame(voltage_control_frame)
 monitor_frame.grid(row=3, column=0)
-
-
 ttk.Label(monitor_frame, text="Set Voltage (V): ").grid(row=0, column=0)
 BertanStart = Text(monitor_frame, width=10, height=1)
 BertanStart.grid(row=0, column=1, padx=10)  # change e0 to BertanStart
 BertanStart.insert("1.0", "0.00")
-
-
 ttk.Label(monitor_frame, text="Actual Voltage (V): ").grid(row=1, column=0)
 bertan_voltage = Text(monitor_frame, width=10, height=1)
 bertan_voltage.grid(row=1, column=1)  # change t0 to BertanVoltage
 bertan_voltage.insert("1.0", "0.00")
-
 ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=2, column=0)
 electrospray_output = Text(monitor_frame, width=10, height=1)
 electrospray_output.grid(row=2, column=1)  # change t1 to ElectroVoltage
 electrospray_output.insert("1.0", "0.00")
-
 ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=3, column=0)
 electrometer_output = Text(monitor_frame, width=10, height=1)
 electrometer_output.grid(row=3, column=1)  # change t1 to ElectroVoltage
 electrometer_output.insert("1.0", "0.00")
+
+BertanVoltSet = ttk.Button(monitor_frame, text="Start", width=5, command=start_run)
+BertanVoltSet.grid(row=4, column=0, columnspan=2, pady=10, ipady=1)
+
 
 # ############ Open Labjack ##############################
 # handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
@@ -341,21 +363,22 @@ dma_write = "TDAC0"
 
 def run_program(
     record_start,
+    run_settings,
     datetime_old=None,
     exact_time_avg=[],
     time_from_start_avg=[],
+    dma_voltage_avg=[],
     electrometer_voltage_avg=[],
     electrometer_conc_avg=[],
     previous_voltage=0,
 ):
 
     # Pull operating parameters from GUI
-    step_time = int(streamingInterval.get())
-    flow_rate = int(electrometer_flow.get())
+    # step_time = streamingInterval.get()
+    # flow_rate = electrometer_flow.get()
 
     # Other Constants
     voltage_factor_DMA = 10000 / 5
-    repeat_samples = 150
     time_between_nested = 10
     electrometer_conv = 6.242e6 * 60
 
@@ -374,39 +397,45 @@ def run_program(
         global sample_index
         sample_index = 0
     elapsed_milliseconds = 0
-    while elapsed_milliseconds < step_time:
+    while elapsed_milliseconds < run_settings["step_time"]:
         datetime_new = datetime.now()
         elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds() * 1000)
 
-    datetime_old = datetime_old + timedelta(seconds=1)
-    sample_number = int(sample_index / repeat_samples)
-    if sample_number > len(sample_array) - 1:
-        stop_run()
+    datetime_old = datetime_old + timedelta(seconds=run_settings["step_time"] / 1000)
 
+    # Stop run if stop button pressed
     if interrupt:
         return
 
     # Determine what voltage to set
-    if dma_mode.get() == "multi_voltage":
-        # previous_voltage = -1
-        current_voltage = sample_array[sample_number]
+    if run_settings["dma_mode"] == "multi_voltage":
+        sample_number = int(sample_index / run_settings["num_measurements"])
+        if sample_number > len(run_settings["voltage_list"]) - 1:
+            stop_run()
+            return
+        current_voltage = run_settings["voltage_list"][sample_number]
         sample_index += 1
 
-    if dma_mode.get() == "voltage_scan":
-        print(scan_start_volt.get())
+    if run_settings["dma_mode"] == "voltage_scan":
+        current_voltage = (
+            run_settings["scan_start"] + run_settings["scan_step"] * sample_index
+        )
+        sample_index += 1
+        if current_voltage > run_settings["scan_end"]:
+            stop_run()
+            return
 
-    # if dma_mode.get() == "dma_scan":
+    if run_settings["dma_mode"] == "single_voltage":
+        current_voltage = run_settings["set_volt"]
 
-    # previous_voltage = -1
-    # current_voltage = sample_array[sample_number]
-    # sample_index += 1
+    # Set new voltage
+    if current_voltage != previous_voltage:
+        # ljm.eWriteName(handle, dma_write, current_voltage / voltage_factor_DMA)
+        previous_voltage = current_voltage
 
     repeat_readings = 0
-    dwell_steps = int(step_time / time_between_nested)
+    dwell_steps = int(run_settings["step_time"] / run_settings["ms_between_nested"])
     while repeat_readings < dwell_steps:
-        nested_milliseconds = 0
-        # while nested_milliseconds < 20:
-        #     nested_milliseconds = int((datetime.now()- datetime_old).total_seconds()*1000 - time_between_nested*repeat_readings)
 
         # open file
         with open(run_filename, "a", newline="") as csvfile:
@@ -427,10 +456,10 @@ def run_program(
             handle = 0
             read_voltage(electrometer_voltage, handle, electrometer_read)
             electrometer_conc.append(
-                electrometer_voltage[-1] * electrometer_conv / flow_rate
+                electrometer_voltage[-1] * electrometer_conv / run_settings["flow_rate"]
             )
 
-            # Write line to file
+            # Write unaveraged data to file
             data_writer.writerow(
                 [
                     exact_time[-1],
@@ -443,76 +472,143 @@ def run_program(
                 ]
             )
 
+            # Pause until end of time increment
+            repeat_reading_pause_time = int(
+                repeat_readings * run_settings["ms_between_nested"]
+                - (datetime.now() - datetime_old).total_seconds() * 1000
+            )
+            if repeat_reading_pause_time > 0:
+                root.after(repeat_reading_pause_time)
+
         # Update GUI and increment
         # root.update()
         repeat_readings += 1
 
-    # Set new voltage
-    if current_voltage != previous_voltage:
-        # ljm.eWriteName(handle, dma_write, current_voltage / voltage_factor_DMA)
-        previous_voltage = current_voltage
-
     # Average Readings for graphing and Summary CSV
-    exact_time_avg.append(exact_time[0])
-    time_from_start_avg.append(sum(time_from_start) / dwell_steps)
-    dma_voltage_avg = sum(dma_voltage) / dwell_steps
-    electrometer_voltage_avg.append(sum(electrometer_voltage) / dwell_steps)
-    electrometer_conc_avg.append(sum(electrometer_conc) / dwell_steps)
+    average_readings(
+        exact_time_avg,
+        time_from_start_avg,
+        dma_voltage_avg,
+        electrometer_voltage_avg,
+        electrometer_conc_avg,
+        exact_time,
+        time_from_start,
+        dma_voltage,
+        electrometer_voltage,
+        electrometer_conc,
+        dwell_steps,
+    )
 
-    # open file
+    # Write Averaged Data to CSV
     with open(run_filename_avg, "a", newline="") as csvfile_avg:
         data_writer_avg = csv.writer(csvfile_avg, delimiter=",")
         data_writer_avg.writerow(
             [
                 exact_time_avg[-1],
-                dma_voltage_avg,
+                dma_voltage_avg[-1],
                 electrometer_conc_avg[-1],
                 time_from_start_avg[-1],
                 electrometer_voltage_avg[-1],
                 current_voltage,
-                previous_voltage,
             ]
         )
 
     # Update GUI
+    update_gui(
+        dma_voltage_avg, electrometer_conc_avg, electrospray_current, current_voltage
+    )
+
+    # Update Graph
+    update_graph(
+        run_settings,
+        exact_time_avg,
+        time_from_start_avg,
+        dma_voltage_avg,
+        electrometer_voltage_avg,
+        electrometer_conc_avg,
+    )
+
+    canvas.draw()
+
+    root.update()
+    root.after(
+        1,
+        lambda: run_program(
+            record_start,
+            run_settings,
+            datetime_old=datetime_old,
+            exact_time_avg=exact_time_avg,
+            time_from_start_avg=time_from_start_avg,
+            dma_voltage_avg=dma_voltage_avg,
+            electrometer_voltage_avg=electrometer_voltage_avg,
+            electrometer_conc_avg=electrometer_conc_avg,
+            previous_voltage=previous_voltage,
+        ),
+    )
+
+
+def update_graph(
+    run_settings,
+    exact_time_avg,
+    time_from_start_avg,
+    dma_voltage_avg,
+    electrometer_voltage_avg,
+    electrometer_conc_avg,
+):
+    if (
+        run_settings["dma_mode"] == "multi_voltage"
+        or run_settings["dma_mode"] == "single_voltage"
+    ):
+        if len(time_from_start_avg) > 100:
+            time_from_start_avg.pop(0)
+            dma_voltage_avg.pop(0)
+            electrometer_voltage_avg.pop(0)
+            electrometer_conc_avg.pop(0)
+            exact_time_avg.pop(0)
+            figure1.cla()
+            figure1.plot(time_from_start_avg, electrometer_conc_avg, "b")
+            plt.autoscale(True)
+        else:
+            figure1.plot(time_from_start_avg, electrometer_conc_avg, "b")
+
+    if run_settings["dma_mode"] == "voltage_scan":
+        if len(dma_voltage_avg) > 2:
+            figure1.plot(dma_voltage_avg[-2:], electrometer_conc_avg[-2:], "b")
+        else:
+            figure1.plot(dma_voltage_avg, electrometer_conc_avg, "b")
+
+
+def update_gui(
+    dma_voltage_avg, electrometer_conc_avg, electrospray_current, current_voltage
+):
     BertanStart.delete("1.0", "1.end")
     BertanStart.insert("1.0", "%.2f" % current_voltage)
     bertan_voltage.delete("1.0", "1.end")
-    bertan_voltage.insert("1.0", "%.2f" % dma_voltage_avg)
+    bertan_voltage.insert("1.0", "%.2f" % dma_voltage_avg[-1])
     electrometer_output.delete("1.0", "1.end")
     electrometer_output.insert("1.0", "%.2f" % electrometer_conc_avg[-1])
     electrospray_output.delete("1.0", "1.end")
     electrospray_output.insert("1.0", "%.2f" % electrospray_current)
 
-    if len(time_from_start_avg) > 100:
-        time_from_start_avg.pop(0)
-        electrometer_voltage_avg.pop(0)
-        electrometer_conc_avg.pop(0)
-        exact_time_avg.pop(0)
-        figure1.cla()
-        figure1.plot(time_from_start_avg, electrometer_conc_avg, "b")
-        plt.autoscale(True)
-    else:
-        figure1.plot(time_from_start_avg, electrometer_conc_avg, "b")
 
-    canvas.draw()
-
-    root.after(
-        1,
-        lambda: run_program(
-            record_start=record_start,
-            datetime_old=datetime_old,
-            exact_time_avg=exact_time_avg,
-            time_from_start_avg=time_from_start_avg,
-            electrometer_voltage_avg=electrometer_voltage_avg,
-            electrometer_conc_avg=electrometer_conc_avg,
-        ),
-    )
-
-
-# Read Set Voltages
-BertanVoltSet = ttk.Button(monitor_frame, text="Start", width=5, command=start_run)
-BertanVoltSet.grid(row=4, column=0, columnspan=2, pady=10, ipady=1)
+def average_readings(
+    exact_time_avg,
+    time_from_start_avg,
+    dma_voltage_avg,
+    electrometer_voltage_avg,
+    electrometer_conc_avg,
+    exact_time,
+    time_from_start,
+    dma_voltage,
+    electrometer_voltage,
+    electrometer_conc,
+    dwell_steps,
+):
+    exact_time_avg.append(exact_time[0])
+    time_from_start_avg.append(sum(time_from_start) / dwell_steps)
+    dma_voltage_avg.append(sum(dma_voltage) / dwell_steps)
+    electrometer_voltage_avg.append(sum(electrometer_voltage) / dwell_steps)
+    electrometer_conc_avg.append(sum(electrometer_conc) / dwell_steps)
 
 
 root.mainloop()
