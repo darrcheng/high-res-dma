@@ -10,6 +10,7 @@ import threading
 import time
 import csv
 import matplotlib
+import os
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -34,15 +35,21 @@ def set_voltage(voltage, handle, name):
 
 
 def read_voltage(instrument, handle, name="AIN2", scaling=1):
-    # result = ljm.eReadName(handle, name)
-    # instrument = instrument.append(result * scaling)
-    instrument = instrument.append(random.random())
+    result = ljm.eReadName(handle, name)
+    instrument = instrument.append(result * scaling)
 
 
 def start_run():
     BertanVoltSet.configure(text="Stop", command=stop_run)
     global interrupt
     interrupt = False
+
+    data_directory = config_file["general"]["data_directory"]
+    day = datetime.strftime(datetime.now(), "%Y-%m-%d")
+    data_directory_date = os.path.join(data_directory, day)
+    print(data_directory_date)
+    os.makedirs(data_directory_date, exist_ok=True)
+    os.chdir(data_directory_date)
 
     global run_filename
     run_filename = create_filename()
@@ -113,7 +120,6 @@ def stop_run():
     interrupt = True
     BertanVoltSet.configure(text="Start", command=start_run)
     # Reset Voltage to 0 at the end of a run
-    # ljm.eWriteName(handle, dma_write, 0)
 
 
 def write_header():
@@ -331,17 +337,17 @@ BertanVoltSet = ttk.Button(monitor_frame, text="Start", width=5, command=start_r
 BertanVoltSet.grid(row=4, column=0, columnspan=2, pady=10, ipady=1)
 
 
-# ############ Open Labjack ##############################
-# handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
-# info = ljm.getHandleInfo(handle)
-# print(
-#     "Opened a LabJack with Device type: %i, Connection type: %i,\n"
-#     "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i"
-#     % (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5])
-# )
+############ Open Labjack ##############################
+handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
+info = ljm.getHandleInfo(handle)
+print(
+    "Opened a LabJack with Device type: %i, Connection type: %i,\n"
+    "Serial number: %i, IP address: %s, Port: %i,\nMax bytes per MB: %i"
+    % (info[0], info[1], info[2], ljm.numberToIP(info[3]), info[4], info[5])
+)
 
-# ljm.eWriteName(handle, "AIN2_RESOLUTION_INDEX", 8)
-# ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
+ljm.eWriteName(handle, "AIN2_RESOLUTION_INDEX", 8)
+ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
 
 
 # Define Labjack Inputs
@@ -405,6 +411,7 @@ def run_program(
 
     # Stop run if stop button pressed
     if interrupt:
+        # ljm.eWriteName(handle, run_settings["dma_write"], 0)
         return
 
     # Determine what voltage to set
@@ -430,7 +437,7 @@ def run_program(
 
     # Set new voltage
     if current_voltage != previous_voltage:
-        # ljm.eWriteName(handle, dma_write, current_voltage / voltage_factor_DMA)
+        # ljm.eWriteName(handle, run_settings["dma_write"], current_voltage / voltage_factor_DMA)
         previous_voltage = current_voltage
 
     repeat_readings = 0
@@ -443,18 +450,22 @@ def run_program(
 
             # Take Readings
             time_tracker(record_start, exact_time, time_from_start)
-            # dma_voltage.append(ljm.eReadName(handle, dma_read) * voltage_factor_DMA)
-            dma_voltage.append(random.random())
-            # electrospray_voltage = (
-            #     ljm.eReadName(handle, electrospray_voltage_read) * 5000 / 5
-            # )
-            electrospray_voltage = random.random()
-            # electrospray_current = (
-            #     ljm.eReadName(handle, electrospray_current_read) * 0.005 / 5
-            # )
-            electrospray_current = random.random()
-            handle = 0
-            read_voltage(electrometer_voltage, handle, electrometer_read)
+            dma_voltage.append(
+                ljm.eReadName(handle, run_settings["dma_read"]) * voltage_factor_DMA
+            )
+            electrospray_voltage = (
+                ljm.eReadName(handle, run_settings["electrospray_voltage_read"])
+                * 5000
+                / 5
+            )
+            electrospray_current = (
+                ljm.eReadName(handle, run_settings["electrospray_current_read"])
+                * 0.005
+                / 5
+            )
+            read_voltage(
+                electrometer_voltage, handle, run_settings["electrometer_read"]
+            )
             electrometer_conc.append(
                 electrometer_voltage[-1] * electrometer_conv / run_settings["flow_rate"]
             )
