@@ -79,6 +79,7 @@ def create_run_settings():
         "step_time": streamingInterval.get(),
         "flow_rate": electrometer_flow.get(),
         "ms_between_nested": int(config_file["general"]["ms_between_nested"]),
+        "voltage_factor_dma": int(config_file["general"]["voltage_factor_dma"]),
         "electrometer_read": config_file["lj_inputs"]["electrometer_read"],
         "dma_read": config_file["lj_inputs"]["dma_read"],
         "electrospray_voltage_read": config_file["lj_inputs"][
@@ -87,7 +88,8 @@ def create_run_settings():
         "electrospray_current_read": config_file["lj_inputs"][
             "electrospray_current_read"
         ],
-        "dma_write": config_file["lj_inputs"]["dma_write"],
+        "dma_write_neg": config_file["lj_inputs"]["dma_write_neg"],
+        "dma_write_pos": config_file["lj_inputs"]["dma_write_pos"],
     }
 
     if dma_mode.get() == "multi_voltage":
@@ -351,17 +353,17 @@ ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
 
 
 # Define Labjack Inputs
-global electrometer_read
-electrometer_read = "AIN2"
-global dma_read
-dma_read = "AIN1"
-global electrospray_voltage_read
-electrospray_voltage_read = "AIN5"
-# Set voltage
-global electrospray_current_read
-electrospray_current_read = "AIN4"
-global dma_write
-dma_write = "TDAC0"
+# global electrometer_read
+# electrometer_read = "AIN2"
+# global dma_read
+# dma_read = "AIN1"
+# global electrospray_voltage_read
+# electrospray_voltage_read = "AIN5"
+# # Set voltage
+# global electrospray_current_read
+# electrospray_current_read = "AIN4"
+# global dma_write_neg
+# dma_write_neg = "TDAC0"
 
 
 ########################### Main Program ###############################
@@ -383,9 +385,11 @@ def run_program(
     # step_time = streamingInterval.get()
     # flow_rate = electrometer_flow.get()
 
+    # Enable Ultravolt
+    ljm.eWriteName(handle, "DAC0", 3)
+
     # Other Constants
-    voltage_factor_DMA = 10000 / 5
-    time_between_nested = 10
+    voltage_factor_DMA = 5000 / 10
     electrometer_conv = 6.242e6 * 60
 
     # Define Lists
@@ -411,7 +415,13 @@ def run_program(
 
     # Stop run if stop button pressed
     if interrupt:
-        # ljm.eWriteName(handle, run_settings["dma_write"], 0)
+        ultravolt_voltage_set(
+            0,
+            handle,
+            run_settings["dma_write_neg"],
+            run_settings["dma_write_pos"],
+        )
+        ljm.eWriteName(handle, "DAC0", 0)
         return
 
     # Determine what voltage to set
@@ -419,6 +429,13 @@ def run_program(
         sample_number = int(sample_index / run_settings["num_measurements"])
         if sample_number > len(run_settings["voltage_list"]) - 1:
             stop_run()
+            ultravolt_voltage_set(
+                0,
+                handle,
+                run_settings["dma_write_neg"],
+                run_settings["dma_write_pos"],
+            )
+            ljm.eWriteName(handle, "DAC0", 0)
             return
         current_voltage = run_settings["voltage_list"][sample_number]
         sample_index += 1
@@ -430,6 +447,13 @@ def run_program(
         sample_index += 1
         if current_voltage > run_settings["scan_end"]:
             stop_run()
+            ultravolt_voltage_set(
+                0,
+                handle,
+                run_settings["dma_write_neg"],
+                run_settings["dma_write_pos"],
+            )
+            ljm.eWriteName(handle, "DAC0", 0)
             return
 
     if run_settings["dma_mode"] == "single_voltage":
@@ -437,7 +461,15 @@ def run_program(
 
     # Set new voltage
     if current_voltage != previous_voltage:
-        # ljm.eWriteName(handle, run_settings["dma_write"], current_voltage / voltage_factor_DMA)
+        # ljm.eWriteName(
+        #     handle, run_settings["dma_write_neg"], current_voltage / voltage_factor_DMA
+        # )
+        ultravolt_voltage_set(
+            current_voltage / run_settings["voltage_factor_dma"],
+            handle,
+            run_settings["dma_write_neg"],
+            run_settings["dma_write_pos"],
+        )
         previous_voltage = current_voltage
 
     repeat_readings = 0
@@ -451,7 +483,8 @@ def run_program(
             # Take Readings
             time_tracker(record_start, exact_time, time_from_start)
             dma_voltage.append(
-                ljm.eReadName(handle, run_settings["dma_read"]) * voltage_factor_DMA
+                ljm.eReadName(handle, run_settings["dma_read"])
+                * run_settings["voltage_factor_dma"]
             )
             electrospray_voltage = (
                 ljm.eReadName(handle, run_settings["electrospray_voltage_read"])
@@ -620,6 +653,18 @@ def average_readings(
     dma_voltage_avg.append(sum(dma_voltage) / dwell_steps)
     electrometer_voltage_avg.append(sum(electrometer_voltage) / dwell_steps)
     electrometer_conc_avg.append(sum(electrometer_conc) / dwell_steps)
+
+
+def ultravolt_voltage_set(voltage_set, lj_handle, neg_output, pos_output):
+    if voltage_set > 0:
+        ljm.eWriteName(lj_handle, pos_output, voltage_set)
+        ljm.eWriteName(lj_handle, neg_output, 0)
+    if voltage_set < 0:
+        ljm.eWriteName(lj_handle, pos_output, 0)
+        ljm.eWriteName(lj_handle, neg_output, voltage_set * -1)
+    if voltage_set == 0:
+        ljm.eWriteName(lj_handle, pos_output, 0)
+        ljm.eWriteName(lj_handle, neg_output, 0)
 
 
 root.mainloop()
