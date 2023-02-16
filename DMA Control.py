@@ -441,20 +441,37 @@ def run_program(
         sample_index += 1
 
     if run_settings["dma_mode"] == "voltage_scan":
-        current_voltage = (
-            run_settings["scan_start"] + run_settings["scan_step"] * sample_index
-        )
+        if run_settings["scan_start"] <= run_settings["scan_end"]:
+            step_pos = True
+        else:
+            step_pos = False
+        current_voltage = run_settings["scan_start"] + run_settings[
+            "scan_step"
+        ] * sample_index * (-1 + 2 * step_pos)
+        print(current_voltage)
         sample_index += 1
-        if current_voltage > run_settings["scan_end"]:
-            stop_run()
-            ultravolt_voltage_set(
-                0,
-                handle,
-                run_settings["dma_write_neg"],
-                run_settings["dma_write_pos"],
-            )
-            ljm.eWriteName(handle, "DAC0", 0)
-            return
+        if step_pos == True:
+            if current_voltage > run_settings["scan_end"]:
+                stop_run()
+                ultravolt_voltage_set(
+                    0,
+                    handle,
+                    run_settings["dma_write_neg"],
+                    run_settings["dma_write_pos"],
+                )
+                ljm.eWriteName(handle, "DAC0", 0)
+                return
+        else:
+            if current_voltage < run_settings["scan_end"]:
+                stop_run()
+                ultravolt_voltage_set(
+                    0,
+                    handle,
+                    run_settings["dma_write_neg"],
+                    run_settings["dma_write_pos"],
+                )
+                ljm.eWriteName(handle, "DAC0", 0)
+                return
 
     if run_settings["dma_mode"] == "single_voltage":
         current_voltage = run_settings["set_volt"]
