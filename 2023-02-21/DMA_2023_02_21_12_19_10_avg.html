@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .error {
+        color: red;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@4.17.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 400, "continuousHeight": 300}}, "vconcat": [{"layer": [{"mark": "line", "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "DMA Voltage", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "DMA Voltage", "type": "quantitative"}}, "selection": {"selector001": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["DMA Voltage"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector001"}, "value": 0}, "x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector001"}}]}], "height": 300, "width": 600}, {"layer": [{"mark": "line", "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "Time Since Start", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "Time Since Start", "type": "quantitative"}}, "selection": {"selector002": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["Time Since Start"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector002"}, "value": 0}, "x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector002"}}]}], "height": 300, "width": 600}], "data": {"name": "data-ea777a9e52af318ba6c5493e0c1b6077"}, "$schema": "https://vega.github.io/schema/vega-lite/v4.17.0.json", "datasets": {"data-ea777a9e52af318ba6c5493e0c1b6077": [{"Time": "2023-02-21 12:19:11.257885", "DMA Voltage": -4851.468510627747, "Electrometer Concentration": -11285233.200798277, "Time Since Start": 1.4916464200000004, "Electrometer Voltage": -9.702672996520995, "DMA Set Voltage": 0}, {"Time": "2023-02-21 12:19:12.312618", "DMA Voltage": -4851.7431640625, "Electrometer Concentration": -11286917.080367424, "Time Since Start": 2.49581812, "Electrometer Voltage": -9.704120740890502, "DMA Set Voltage": 1}, {"Time": "2023-02-21 12:19:13.299316", "DMA Voltage": -4851.578049659729, "Electrometer Concentration": -11284693.330420025, "Time Since Start": 3.494171219999999, "Electrometer Voltage": -9.702208833694458, "DMA Set Voltage": 2}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div class="error" style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

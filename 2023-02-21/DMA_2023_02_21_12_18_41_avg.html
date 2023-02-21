@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .error {
+        color: red;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@4.17.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 400, "continuousHeight": 300}}, "vconcat": [{"layer": [{"mark": "line", "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "DMA Voltage", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "DMA Voltage", "type": "quantitative"}}, "selection": {"selector001": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["DMA Voltage"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector001"}, "value": 0}, "x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector001"}}]}], "height": 300, "width": 600}, {"layer": [{"mark": "line", "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "Time Since Start", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "Time Since Start", "type": "quantitative"}}, "selection": {"selector002": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["Time Since Start"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector002"}, "value": 0}, "x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector002"}}]}], "height": 300, "width": 600}], "data": {"name": "data-3b33225533e5bddc6fafcfdc8d725352"}, "$schema": "https://vega.github.io/schema/vega-lite/v4.17.0.json", "datasets": {"data-3b33225533e5bddc6fafcfdc8d725352": [{"Time": "2023-02-21 12:18:42.471626", "DMA Voltage": -4857.337627410889, "Electrometer Concentration": -11299453.44046954, "Time Since Start": 1.4905886999999998, "Electrometer Voltage": -9.71489909172058, "DMA Set Voltage": 0}, {"Time": "2023-02-21 12:18:43.524302", "DMA Voltage": -4858.2652044296265, "Electrometer Concentration": -11301197.717281606, "Time Since Start": 2.49593171, "Electrometer Voltage": -9.716398763656615, "DMA Set Voltage": 1}, {"Time": "2023-02-21 12:18:44.505092", "DMA Voltage": -4858.120579719544, "Electrometer Concentration": -11302562.550772198, "Time Since Start": 3.49307592, "Electrometer Voltage": -9.717572202682495, "DMA Set Voltage": 2}, {"Time": "2023-02-21 12:18:45.496078", "DMA Voltage": -4857.1027755737305, "Electrometer Concentration": -11298512.086490374, "Time Since Start": 4.492269500000002, "Electrometer Voltage": -9.71408974647522, "DMA Set Voltage": 3}, {"Time": "2023-02-21 12:18:46.519450", "DMA Voltage": -4858.248229026794, "Electrometer Concentration": -11301218.825812962, "Time Since Start": 5.495682900000002, "Electrometer Voltage": -9.716416912078856, "DMA Set Voltage": 4}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div class="error" style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

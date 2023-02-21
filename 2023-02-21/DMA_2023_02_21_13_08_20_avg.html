@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .error {
+        color: red;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@4.17.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 400, "continuousHeight": 300}}, "vconcat": [{"layer": [{"mark": "line", "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "DMA Voltage", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "DMA Voltage", "type": "quantitative"}}, "selection": {"selector001": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["DMA Voltage"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector001"}, "value": 0}, "x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector001"}}]}], "height": 300, "width": 600}, {"layer": [{"mark": "line", "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "Time Since Start", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "Time Since Start", "type": "quantitative"}}, "selection": {"selector002": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["Time Since Start"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector002"}, "value": 0}, "x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector002"}}]}], "height": 300, "width": 600}], "data": {"name": "data-d4841a537fb02a1dbe07cb31ef4d24aa"}, "$schema": "https://vega.github.io/schema/vega-lite/v4.17.0.json", "datasets": {"data-d4841a537fb02a1dbe07cb31ef4d24aa": [{"Time": "2023-02-21 13:08:21.558634", "DMA Voltage": -4777.054557800293, "Electrometer Concentration": -11116866.685181374, "Time Since Start": 1.4924511299999994, "Electrometer Voltage": -9.557916994094848, "DMA Set Voltage": 0}, {"Time": "2023-02-21 13:08:22.610966", "DMA Voltage": -4777.244052886963, "Electrometer Concentration": -11112128.757185372, "Time Since Start": 2.49671987, "Electrometer Voltage": -9.553843479156496, "DMA Set Voltage": 1}, {"Time": "2023-02-21 13:08:23.615258", "DMA Voltage": -4778.140869140625, "Electrometer Concentration": -11113317.623391945, "Time Since Start": 3.49735173, "Electrometer Voltage": -9.554865627288818, "DMA Set Voltage": 2}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div class="error" style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

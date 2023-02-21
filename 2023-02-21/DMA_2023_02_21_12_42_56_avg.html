@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .error {
+        color: red;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@4.17.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 400, "continuousHeight": 300}}, "vconcat": [{"layer": [{"mark": "line", "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "DMA Voltage", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "DMA Voltage", "type": "quantitative"}}, "selection": {"selector001": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["DMA Voltage"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector001"}, "value": 0}, "x": {"field": "DMA Voltage", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "DMA Voltage", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector001"}}]}], "height": 300, "width": 600}, {"layer": [{"mark": "line", "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": "point", "encoding": {"opacity": {"value": 0}, "tooltip": [{"field": "Time Since Start", "type": "quantitative"}, {"field": "Electrometer Concentration", "type": "quantitative"}], "x": {"field": "Time Since Start", "type": "quantitative"}}, "selection": {"selector002": {"type": "single", "nearest": true, "on": "mouseover", "fields": ["Time Since Start"], "empty": "none"}}}, {"mark": "point", "encoding": {"opacity": {"condition": {"value": 1, "selection": "selector002"}, "value": 0}, "x": {"field": "Time Since Start", "type": "quantitative"}, "y": {"field": "Electrometer Concentration", "type": "quantitative"}}}, {"mark": {"type": "rule", "color": "gray"}, "encoding": {"x": {"field": "Time Since Start", "type": "quantitative"}}, "transform": [{"filter": {"selection": "selector002"}}]}], "height": 300, "width": 600}], "data": {"name": "data-bcbcce205e15ea005e4153e53fb20057"}, "$schema": "https://vega.github.io/schema/vega-lite/v4.17.0.json", "datasets": {"data-bcbcce205e15ea005e4153e53fb20057": [{"Time": "2023-02-21 12:42:57.286369", "DMA Voltage": -4856.522355079651, "Electrometer Concentration": -11300878.80430992, "Time Since Start": 1.49234345, "Electrometer Voltage": -9.716124572753904, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:42:58.330384", "DMA Voltage": -4855.851335525513, "Electrometer Concentration": -11295909.869338565, "Time Since Start": 2.4955013700000004, "Electrometer Voltage": -9.711852445602418, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:42:59.319665", "DMA Voltage": -4855.802102088928, "Electrometer Concentration": -11296457.970158365, "Time Since Start": 3.4946830099999984, "Electrometer Voltage": -9.712323684692382, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:43:00.325972", "DMA Voltage": -4856.347432136536, "Electrometer Concentration": -11294106.892396206, "Time Since Start": 4.495469699999998, "Electrometer Voltage": -9.710302305221555, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:43:01.314972", "DMA Voltage": -4855.231533050537, "Electrometer Concentration": -11293545.858025404, "Time Since Start": 5.493032940000002, "Electrometer Voltage": -9.709819946289064, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:43:02.316967", "DMA Voltage": -4854.798893928528, "Electrometer Concentration": -11292762.22459663, "Time Since Start": 6.49374029, "Electrometer Voltage": -9.70914620399475, "DMA Set Voltage": 10}, {"Time": "2023-02-21 12:43:03.311978", "DMA Voltage": -4855.297737121582, "Electrometer Concentration": -11296933.68302458, "Time Since Start": 7.493411309999998, "Electrometer Voltage": -9.71273268699646, "DMA Set Voltage": 20}, {"Time": "2023-02-21 12:43:04.313968", "DMA Voltage": -4856.191411018372, "Electrometer Concentration": -11296946.505653191, "Time Since Start": 8.493492280000003, "Electrometer Voltage": -9.712743711471555, "DMA Set Voltage": 20}, {"Time": "2023-02-21 12:43:05.320110", "DMA Voltage": -4856.4222955703735, "Electrometer Concentration": -11293825.46010106, "Time Since Start": 9.49548229, "Electrometer Voltage": -9.710060338974, "DMA Set Voltage": 20}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div class="error" style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
