@@ -46,9 +46,10 @@ def read_voltage(instrument, handle, name="AIN2", scaling=1):
 
 
 def update_run_settings():
-    print("hello")
-    run_settings = create_run_settings
-    return run_settings
+    global single_voltage_update
+    single_voltage_update = True
+    global run_settings
+    run_settings = create_run_settings()
 
 
 def start_run():
@@ -308,6 +309,7 @@ single_voltage_update = ttk.Button(
     single_voltage_frame, text="Update", width=10, command=update_run_settings
 )
 single_voltage_update.grid(row=2, column=0, columnspan=2, pady=5, ipady=1)
+single_voltage_update = False
 
 
 # DMA Multiple Voltage Options
@@ -400,7 +402,6 @@ def run_program(
     electrometer_conc_avg=[],
     previous_voltage=0,
 ):
-
     # Pull operating parameters from GUI
     # step_time = streamingInterval.get()
     # flow_rate = electrometer_flow.get()
@@ -468,7 +469,6 @@ def run_program(
         current_voltage = run_settings["scan_start"] + run_settings[
             "scan_step"
         ] * sample_index * (-1 + 2 * step_pos)
-        print(current_voltage)
         sample_index += 1
         if step_pos == True:
             if current_voltage > run_settings["scan_end"]:
@@ -495,12 +495,13 @@ def run_program(
 
     if run_settings["dma_mode"] == "single_voltage":
         current_voltage = run_settings["set_volt"]
+        global single_voltage_update
+        if single_voltage_update == True:
+            run_settings = create_run_settings()
+            single_voltage_update = False
 
     # Set new voltage
     if current_voltage != previous_voltage:
-        # ljm.eWriteName(
-        #     handle, run_settings["dma_write_neg"], current_voltage / voltage_factor_DMA
-        # )
         ultravolt_voltage_set(
             current_voltage / run_settings["voltage_factor_dma"],
             handle,
