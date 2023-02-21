@@ -45,6 +45,12 @@ def read_voltage(instrument, handle, name="AIN2", scaling=1):
     instrument = instrument.append(result * scaling)
 
 
+def update_run_settings():
+    print("hello")
+    run_settings = create_run_settings
+    return run_settings
+
+
 def start_run():
     BertanVoltSet.configure(text="Stop", command=stop_run)
     global interrupt
@@ -298,6 +304,11 @@ ttk.Label(single_voltage_frame, text="Voltage: ").grid(row=1, column=0)
 ttk.Entry(single_voltage_frame, textvariable=single_voltage_value, width=13).grid(
     row=1, column=1
 )
+single_voltage_update = ttk.Button(
+    single_voltage_frame, text="Update", width=10, command=update_run_settings
+)
+single_voltage_update.grid(row=2, column=0, columnspan=2, pady=5, ipady=1)
+
 
 # DMA Multiple Voltage Options
 multi_voltage_frame = ttk.Frame(BertanFrame)
@@ -693,25 +704,36 @@ def ultravolt_voltage_set(voltage_set, lj_handle, neg_output, pos_output):
         ljm.eWriteName(lj_handle, neg_output, 0)
 
 
-
 def graph_dma_voltage(df):
     # Create a selection that chooses the nearest point & selects based on x-value
-    nearest = alt.selection(type='single', nearest=True, on='mouseover',
-                            fields=['DMA Voltage'], empty='none')
+    nearest = alt.selection(
+        type="single",
+        nearest=True,
+        on="mouseover",
+        fields=["DMA Voltage"],
+        empty="none",
+    )
 
-    line = alt.Chart(df).mark_line().encode(
-        x='DMA Voltage:Q',
-        y='Electrometer Concentration:Q',
+    line = (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            x="DMA Voltage:Q",
+            y="Electrometer Concentration:Q",
+        )
     )
 
     # Transparent selectors across the chart. This is what tells us
     # the x-value of the cursor
-    selectors = alt.Chart(df).mark_point().encode(
-        x='DMA Voltage:Q',
-        tooltip=['DMA Voltage:Q','Electrometer Concentration'],
-        opacity=alt.value(0),
-    ).add_selection(
-        nearest
+    selectors = (
+        alt.Chart(df)
+        .mark_point()
+        .encode(
+            x="DMA Voltage:Q",
+            tooltip=["DMA Voltage:Q", "Electrometer Concentration"],
+            opacity=alt.value(0),
+        )
+        .add_selection(nearest)
     )
 
     # Draw points on the line, and highlight based on selection
@@ -725,37 +747,53 @@ def graph_dma_voltage(df):
     # )
 
     # Draw a rule at the location of the selection
-    rules = alt.Chart(df).mark_rule(color='gray').encode(
-        x='DMA Voltage:Q',
-    ).transform_filter(
-        nearest
+    rules = (
+        alt.Chart(df)
+        .mark_rule(color="gray")
+        .encode(
+            x="DMA Voltage:Q",
+        )
+        .transform_filter(nearest)
     )
 
     # Put the five layers into a chart and bind the data
     dma_voltage = alt.layer(
-        line, selectors, points, rules, #text
-    ).properties(
-        width=600, height=300
-    )
+        line,
+        selectors,
+        points,
+        rules,  # text
+    ).properties(width=600, height=300)
     ##########################
-   
-        # Create a selection that chooses the nearest point & selects based on x-value
-    nearest = alt.selection(type='single', nearest=True, on='mouseover',
-                            fields=['Time Since Start'], empty='none')
 
-    line = alt.Chart(df).mark_line().encode(
-        x='Time Since Start:Q',
-        y='Electrometer Concentration:Q',
+    # Create a selection that chooses the nearest point & selects based on x-value
+    nearest = alt.selection(
+        type="single",
+        nearest=True,
+        on="mouseover",
+        fields=["Time Since Start"],
+        empty="none",
+    )
+
+    line = (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            x="Time Since Start:Q",
+            y="Electrometer Concentration:Q",
+        )
     )
 
     # Transparent selectors across the chart. This is what tells us
     # the x-value of the cursor
-    selectors = alt.Chart(df).mark_point().encode(
-        x='Time Since Start:Q',
-        tooltip=['Time Since Start:Q','Electrometer Concentration'],
-        opacity=alt.value(0),
-    ).add_selection(
-        nearest
+    selectors = (
+        alt.Chart(df)
+        .mark_point()
+        .encode(
+            x="Time Since Start:Q",
+            tooltip=["Time Since Start:Q", "Electrometer Concentration"],
+            opacity=alt.value(0),
+        )
+        .add_selection(nearest)
     )
 
     # Draw points on the line, and highlight based on selection
@@ -769,23 +807,28 @@ def graph_dma_voltage(df):
     # )
 
     # Draw a rule at the location of the selection
-    rules = alt.Chart(df).mark_rule(color='gray').encode(
-        x='Time Since Start:Q',
-    ).transform_filter(
-        nearest
+    rules = (
+        alt.Chart(df)
+        .mark_rule(color="gray")
+        .encode(
+            x="Time Since Start:Q",
+        )
+        .transform_filter(nearest)
     )
 
     # Put the five layers into a chart and bind the data
     time_basis = alt.layer(
-        line, selectors, points, rules, #text
-    ).properties(
-        width=600, height=300
+        line,
+        selectors,
+        points,
+        rules,  # text
+    ).properties(width=600, height=300)
+    graphs = alt.vconcat(dma_voltage, time_basis)
+
+    graphs.save(run_filename_avg[:-4] + ".html")
+    webbrowser.open_new_tab(
+        "file://" + os.path.realpath(run_filename_avg[:-4] + ".html")
     )
-    graphs = alt.vconcat(dma_voltage,time_basis)
-   
-    graphs.save(run_filename_avg[:-4]+ '.html')
-    webbrowser.open_new_tab('file://' + os.path.realpath(run_filename_avg[:-4]+ '.html'))
-   
 
 
 root.mainloop()
