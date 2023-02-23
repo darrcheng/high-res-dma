@@ -340,25 +340,29 @@ ttk.Entry(multi_voltage_frame, textvariable=repeat_measure, width=13).grid(
 # Monitoring
 monitor_frame = ttk.Frame(voltage_control_frame)
 monitor_frame.grid(row=3, column=0)
-ttk.Label(monitor_frame, text="Set Voltage (V): ").grid(row=0, column=0)
+ttk.Label(monitor_frame, text="Time: ").grid(row=0, column=0)
+current_time = Text(monitor_frame, width=10, height=1)
+current_time.grid(row=0, column=1, padx=10)  # change e0 to BertanStart
+current_time.insert("1.0", "00:00:00")
+ttk.Label(monitor_frame, text="Set Voltage (V): ").grid(row=1, column=0)
 BertanStart = Text(monitor_frame, width=10, height=1)
-BertanStart.grid(row=0, column=1, padx=10)  # change e0 to BertanStart
+BertanStart.grid(row=1, column=1, padx=10)  # change e0 to BertanStart
 BertanStart.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Actual Voltage (V): ").grid(row=1, column=0)
+ttk.Label(monitor_frame, text="Actual Voltage (V): ").grid(row=2, column=0)
 bertan_voltage = Text(monitor_frame, width=10, height=1)
-bertan_voltage.grid(row=1, column=1)  # change t0 to BertanVoltage
+bertan_voltage.grid(row=2, column=1)  # change t0 to BertanVoltage
 bertan_voltage.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=2, column=0)
+ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=3, column=0)
 electrospray_output = Text(monitor_frame, width=10, height=1)
-electrospray_output.grid(row=2, column=1)  # change t1 to ElectroVoltage
+electrospray_output.grid(row=3, column=1)  # change t1 to ElectroVoltage
 electrospray_output.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=3, column=0)
+ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=4, column=0)
 electrometer_output = Text(monitor_frame, width=10, height=1)
-electrometer_output.grid(row=3, column=1)  # change t1 to ElectroVoltage
+electrometer_output.grid(row=4, column=1)  # change t1 to ElectroVoltage
 electrometer_output.insert("1.0", "0.00")
 
 BertanVoltSet = ttk.Button(monitor_frame, text="Start", width=5, command=start_run)
-BertanVoltSet.grid(row=4, column=0, columnspan=2, pady=10, ipady=1)
+BertanVoltSet.grid(row=5, column=0, columnspan=2, pady=10, ipady=1)
 
 
 ############ Open Labjack ##############################
@@ -597,7 +601,11 @@ def run_program(
 
     # Update GUI
     update_gui(
-        dma_voltage_avg, electrometer_conc_avg, electrospray_current, current_voltage
+        exact_time_avg,
+        dma_voltage_avg,
+        electrometer_conc_avg,
+        electrospray_current,
+        current_voltage,
     )
 
     # Update Graph
@@ -661,8 +669,14 @@ def update_graph(
 
 
 def update_gui(
-    dma_voltage_avg, electrometer_conc_avg, electrospray_current, current_voltage
+    exact_time_avg,
+    dma_voltage_avg,
+    electrometer_conc_avg,
+    electrospray_current,
+    current_voltage,
 ):
+    current_time.delete("1.0", "1.end")
+    current_time.insert("1.0", exact_time_avg[-1].strftime("%X"))
     BertanStart.delete("1.0", "1.end")
     BertanStart.insert("1.0", "%.2f" % current_voltage)
     bertan_voltage.delete("1.0", "1.end")
