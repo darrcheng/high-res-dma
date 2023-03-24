@@ -93,6 +93,7 @@ def create_run_settings():
         "flow_rate": electrometer_flow.get(),
         "ms_between_nested": int(config_file["general"]["ms_between_nested"]),
         "voltage_factor_dma": int(config_file["general"]["voltage_factor_dma"]),
+        "sheath_temp_factor": int(config_file["general"]["sheath_temp_factor"]),
         "electrometer_read": config_file["lj_inputs"]["electrometer_read"],
         "dma_read": config_file["lj_inputs"]["dma_read"],
         "electrospray_voltage_read": config_file["lj_inputs"][
@@ -103,6 +104,8 @@ def create_run_settings():
         ],
         "dma_write_neg": config_file["lj_inputs"]["dma_write_neg"],
         "dma_write_pos": config_file["lj_inputs"]["dma_write_pos"],
+        "sheath_temp_read": config_file["lj_inputs"]["sheath_temp_read"],
+        "sheath_rh_read": config_file["lj_inputs"]["sheath_rh_read"],
     }
 
     if dma_mode.get() == "multi_voltage":
@@ -167,6 +170,8 @@ def write_header():
                 "Time Since Start",
                 "Electrometer Voltage",
                 "DMA Set Voltage",
+                "Sheath Temperature",
+                "Sheath RH",
             ]
         )
 
@@ -344,25 +349,33 @@ ttk.Label(monitor_frame, text="Time: ").grid(row=0, column=0)
 current_time = Text(monitor_frame, width=10, height=1)
 current_time.grid(row=0, column=1, padx=10)  # change e0 to BertanStart
 current_time.insert("1.0", "00:00:00")
-ttk.Label(monitor_frame, text="Set Voltage (V): ").grid(row=1, column=0)
+ttk.Label(monitor_frame, text="Temperature (C): ").grid(row=1, column=0)
+sheath_temp = Text(monitor_frame, width=10, height=1)
+sheath_temp.grid(row=1, column=1, padx=10)  # change e0 to BertanStart
+sheath_temp.insert("1.0", "0.00")
+ttk.Label(monitor_frame, text="Relative Hum. (%): ").grid(row=2, column=0)
+sheath_rh = Text(monitor_frame, width=10, height=1)
+sheath_rh.grid(row=2, column=1, padx=10)  # change e0 to BertanStart
+sheath_rh.insert("1.0", "0.00")
+ttk.Label(monitor_frame, text="Set Voltage (V): ").grid(row=3, column=0)
 BertanStart = Text(monitor_frame, width=10, height=1)
-BertanStart.grid(row=1, column=1, padx=10)  # change e0 to BertanStart
+BertanStart.grid(row=3, column=1, padx=10)  # change e0 to BertanStart
 BertanStart.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Actual Voltage (V): ").grid(row=2, column=0)
+ttk.Label(monitor_frame, text="Actual Voltage (V): ").grid(row=4, column=0)
 bertan_voltage = Text(monitor_frame, width=10, height=1)
-bertan_voltage.grid(row=2, column=1)  # change t0 to BertanVoltage
+bertan_voltage.grid(row=4, column=1)  # change t0 to BertanVoltage
 bertan_voltage.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=3, column=0)
+ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=5, column=0)
 electrospray_output = Text(monitor_frame, width=10, height=1)
-electrospray_output.grid(row=3, column=1)  # change t1 to ElectroVoltage
+electrospray_output.grid(row=5, column=1)  # change t1 to ElectroVoltage
 electrospray_output.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=4, column=0)
+ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=6, column=0)
 electrometer_output = Text(monitor_frame, width=10, height=1)
-electrometer_output.grid(row=4, column=1)  # change t1 to ElectroVoltage
+electrometer_output.grid(row=6, column=1)  # change t1 to ElectroVoltage
 electrometer_output.insert("1.0", "0.00")
 
 BertanVoltSet = ttk.Button(monitor_frame, text="Start", width=5, command=start_run)
-BertanVoltSet.grid(row=5, column=0, columnspan=2, pady=10, ipady=1)
+BertanVoltSet.grid(row=7, column=0, columnspan=2, pady=10, ipady=1)
 
 
 ############ Open Labjack ##############################
@@ -425,6 +438,8 @@ def run_program(
     electrospray_current = []
     electrometer_voltage = []
     electrometer_conc = []
+    sheath_flow_temp = []
+    sheath_flow_rh = []
 
     # Datetime
     if datetime_old == None:
@@ -545,6 +560,12 @@ def run_program(
                 electrometer_voltage[-1] * electrometer_conv / run_settings["flow_rate"]
             )
 
+            sheath_flow_temp.append(
+                ljm.eReadName(handle, run_settings["sheath_temp_read"])
+                * run_settings["sheath_temp_factor"]
+            )
+            sheath_flow_rh.append(ljm.eReadName(handle, run_settings["sheath_rh_read"]))
+
             # Write unaveraged data to file
             data_writer.writerow(
                 [
@@ -570,20 +591,32 @@ def run_program(
         # root.update()
         repeat_readings += 1
 
+    sheath_flow_temp_avg = 0
+    sheath_flow_rh_avg = 0
+
     # Average Readings for graphing and Summary CSV
-    average_readings(
+    sheath_flow_temp_avg, sheath_flow_rh_avg = average_readings(
         exact_time_avg,
         time_from_start_avg,
         dma_voltage_avg,
         electrometer_voltage_avg,
         electrometer_conc_avg,
+        sheath_flow_temp_avg,
+        sheath_flow_rh_avg,
         exact_time,
         time_from_start,
         dma_voltage,
         electrometer_voltage,
         electrometer_conc,
+        sheath_flow_temp,
+        sheath_flow_rh,
         dwell_steps,
     )
+
+    # Correct RH
+    v_supply = 5
+    sheath_flow_rh_avg = (sheath_flow_rh_avg / v_supply - 0.16) / 0.0062
+    sheath_flow_rh_avg = sheath_flow_rh_avg / (1.0546 - 0.00216 * sheath_flow_temp_avg)
 
     # Write Averaged Data to CSV
     with open(run_filename_avg, "a", newline="") as csvfile_avg:
@@ -596,6 +629,8 @@ def run_program(
                 time_from_start_avg[-1],
                 electrometer_voltage_avg[-1],
                 current_voltage,
+                sheath_flow_temp_avg,
+                sheath_flow_rh_avg,
             ]
         )
 
@@ -606,6 +641,8 @@ def run_program(
         electrometer_conc_avg,
         electrospray_current,
         current_voltage,
+        sheath_flow_temp_avg,
+        sheath_flow_rh_avg,
     )
 
     # Update Graph
@@ -674,6 +711,8 @@ def update_gui(
     electrometer_conc_avg,
     electrospray_current,
     current_voltage,
+    sheath_temp_avg,
+    sheath_rh_avg,
 ):
     current_time.delete("1.0", "1.end")
     current_time.insert("1.0", exact_time_avg[-1].strftime("%X"))
@@ -685,6 +724,10 @@ def update_gui(
     electrometer_output.insert("1.0", "%.2f" % electrometer_conc_avg[-1])
     electrospray_output.delete("1.0", "1.end")
     electrospray_output.insert("1.0", "%.2f" % electrospray_current)
+    sheath_temp.delete("1.0", "1.end")
+    sheath_temp.insert("1.0", "%.1f" % sheath_temp_avg)
+    sheath_rh.delete("1.0", "1.end")
+    sheath_rh.insert("1.0", "%.0f" % sheath_rh_avg)
 
 
 def average_readings(
@@ -693,11 +736,15 @@ def average_readings(
     dma_voltage_avg,
     electrometer_voltage_avg,
     electrometer_conc_avg,
+    sheath_flow_temp_avg,
+    sheath_flow_rh_avg,
     exact_time,
     time_from_start,
     dma_voltage,
     electrometer_voltage,
     electrometer_conc,
+    sheath_flow_temp,
+    sheath_flow_rh,
     dwell_steps,
 ):
     exact_time_avg.append(exact_time[0])
@@ -705,6 +752,9 @@ def average_readings(
     dma_voltage_avg.append(sum(dma_voltage) / dwell_steps)
     electrometer_voltage_avg.append(sum(electrometer_voltage) / dwell_steps)
     electrometer_conc_avg.append(sum(electrometer_conc) / dwell_steps)
+    sheath_flow_temp_avg = sum(sheath_flow_temp) / dwell_steps
+    sheath_flow_rh_avg = sum(sheath_flow_rh) / dwell_steps
+    return sheath_flow_temp_avg, sheath_flow_rh_avg
 
 
 def ultravolt_voltage_set(voltage_set, lj_handle, neg_output, pos_output):
