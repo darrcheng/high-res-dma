@@ -1,10 +1,12 @@
 from labjack import ljm
 from datetime import datetime  # Pulls current time from system
 from datetime import timedelta  # Calculates difference in time
+import time
 import csv
 import tkinter as tk
 from tkinter import ttk
 import matplotlib
+
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -46,7 +48,9 @@ def start_run():
     os.chdir(data_directory_date)
 
     # Create filename
-    run_filename = startutilities.create_filename(gui_entry_list["output filename"])
+    run_filename = startutilities.create_filename(
+        gui_entry_list["output filename"]
+    )
     run_filename_avg = run_filename[:-4] + "_avg.csv"
     startutilities.write_header(run_filename, run_filename_avg)
 
@@ -54,7 +58,9 @@ def start_run():
     figure1.cla()
 
     # Configure run settings
-    run_settings = startutilities.create_run_settings(gui_entry_list, config_file, run_filename)
+    run_settings = startutilities.create_run_settings(
+        gui_entry_list, config_file, run_filename
+    )
 
     run_program(
         datetime.now(),
@@ -99,9 +105,9 @@ figure1 = fig.add_subplot(111)
 # Blower Control
 blower_control_frame = ttk.Frame(root)
 blower_control_frame.grid(row=0, column=0)
-ttk.Label(blower_control_frame, text="Blower Control", font=("Helvetica", 12, "bold")).grid(
-    row=0, column=0, pady=(0, 5), columnspan=4
-)
+ttk.Label(
+    blower_control_frame, text="Blower Control", font=("Helvetica", 12, "bold")
+).grid(row=0, column=0, pady=(0, 5), columnspan=4)
 
 blower_set = tk.StringVar()
 ttk.Label(blower_control_frame, text="Blower Set RPM: ").grid(row=1, column=0)
@@ -110,16 +116,20 @@ ttk.Entry(blower_control_frame, textvariable=blower_set, width=13).grid(
 )
 blower_set.trace_add("write", my_callback)
 
-ttk.Label(blower_control_frame, text="Blower RPM: ").grid(row=1, column=2, padx=(20, 0))
+ttk.Label(blower_control_frame, text="Blower RPM: ").grid(
+    row=1, column=2, padx=(20, 0)
+)
 blower_actual = tk.Text(blower_control_frame, width=10, height=1)
 blower_actual.grid(row=1, column=3, pady=2)
 
 # Program Header
 voltage_control_frame = ttk.Frame(root)
 voltage_control_frame.grid(row=1, column=0)
-ttk.Label(voltage_control_frame, text="DMA Voltage Control", font=("Helvetica", 12, "bold")).grid(
-    row=0, column=0, pady=(0, 5)
-)
+ttk.Label(
+    voltage_control_frame,
+    text="DMA Voltage Control",
+    font=("Helvetica", 12, "bold"),
+).grid(row=0, column=0, pady=(0, 5))
 
 # Frame for setting logging frequency
 FreqFrame = ttk.Frame(voltage_control_frame)
@@ -135,19 +145,21 @@ gui_filename.insert("1.0", "No Filename")
 electrometer_flow = tk.IntVar()
 electrometer_flow.set(config_file["general"]["electrometer_flow"])
 ttk.Label(FreqFrame, text="Input Flow Rate: ").grid(row=1, column=0, sticky="W")
-ElectrometerFlow = ttk.Entry(FreqFrame, textvariable=electrometer_flow, width=13).grid(
-    row=1, column=1, sticky="W"
-)
+ElectrometerFlow = ttk.Entry(
+    FreqFrame, textvariable=electrometer_flow, width=13
+).grid(row=1, column=1, sticky="W")
 electrometer_flow.trace_add("write", my_callback)
 
 
 # Data logging frequency entry box and labels
 streamingInterval = tk.IntVar()
 streamingInterval.set(config_file["general"]["data_frequency"])
-ttk.Label(FreqFrame, text="Data frequency (ms): ").grid(row=2, column=0, sticky="W")
-LoggingFreq = ttk.Entry(FreqFrame, textvariable=streamingInterval, width=13).grid(
-    row=2, column=1, sticky="w"
+ttk.Label(FreqFrame, text="Data frequency (ms): ").grid(
+    row=2, column=0, sticky="W"
 )
+LoggingFreq = ttk.Entry(
+    FreqFrame, textvariable=streamingInterval, width=13
+).grid(row=2, column=1, sticky="w")
 streamingInterval.trace_add("write", my_callback)
 
 # Frame for setting Bertan Voltages
@@ -168,15 +180,21 @@ voltage_scan = ttk.Radiobutton(
 scan_start_volt = tk.IntVar()
 scan_start_volt.set(config_file["voltage_scan"]["start_voltage"])
 ttk.Label(scan_frame, text="Start Voltage: ").grid(row=1, column=0)
-ttk.Entry(scan_frame, textvariable=scan_start_volt, width=13).grid(row=1, column=1)
+ttk.Entry(scan_frame, textvariable=scan_start_volt, width=13).grid(
+    row=1, column=1
+)
 scan_end_volt = tk.IntVar()
 scan_end_volt.set(config_file["voltage_scan"]["end_voltage"])
 ttk.Label(scan_frame, text="End Voltage: ").grid(row=2, column=0)
-ttk.Entry(scan_frame, textvariable=scan_end_volt, width=13).grid(row=2, column=1)
+ttk.Entry(scan_frame, textvariable=scan_end_volt, width=13).grid(
+    row=2, column=1
+)
 scan_volt_step = tk.IntVar()
 scan_volt_step.set(config_file["voltage_scan"]["voltage_step"])
 ttk.Label(scan_frame, text="Voltage Step: ").grid(row=3, column=0)
-ttk.Entry(scan_frame, textvariable=scan_volt_step, width=13).grid(row=3, column=1)
+ttk.Entry(scan_frame, textvariable=scan_volt_step, width=13).grid(
+    row=3, column=1
+)
 
 # DMA Single Voltage Options
 single_voltage_frame = ttk.Frame(BertanFrame)
@@ -190,7 +208,9 @@ single_voltage = ttk.Radiobutton(
 single_voltage_value = tk.IntVar()
 single_voltage_value.set(config_file["single_voltage"]["voltage"])
 ttk.Label(single_voltage_frame, text="Voltage: ").grid(row=1, column=0)
-ttk.Entry(single_voltage_frame, textvariable=single_voltage_value, width=13).grid(row=1, column=1)
+ttk.Entry(
+    single_voltage_frame, textvariable=single_voltage_value, width=13
+).grid(row=1, column=1)
 single_voltage_update_butt = ttk.Button(
     single_voltage_frame, text="Update", width=10, command=update_run_settings
 )
@@ -211,13 +231,17 @@ ttk.Label(multi_voltage_frame, text="Voltages: ").grid(row=1, column=0)
 multi_voltage_list = tk.Text(multi_voltage_frame, width=10, height=3)
 multi_voltage_list.insert(1.0, config_file["multiple_voltages"]["set_voltages"])
 multi_voltage_list.grid(row=1, column=1, pady=2)
-ys = ttk.Scrollbar(multi_voltage_frame, orient="vertical", command=multi_voltage_list.yview)
+ys = ttk.Scrollbar(
+    multi_voltage_frame, orient="vertical", command=multi_voltage_list.yview
+)
 multi_voltage_list["yscrollcommand"] = ys.set
 ys.grid(column=2, row=1, sticky="ns")
 repeat_measure = tk.IntVar()
 repeat_measure.set(config_file["multiple_voltages"]["repeat_samples"])
 ttk.Label(multi_voltage_frame, text="# Measurements : ").grid(row=2, column=0)
-ttk.Entry(multi_voltage_frame, textvariable=repeat_measure, width=13).grid(row=2, column=1)
+ttk.Entry(multi_voltage_frame, textvariable=repeat_measure, width=13).grid(
+    row=2, column=1
+)
 
 # Monitoring
 monitor_frame = ttk.Frame(voltage_control_frame)
@@ -246,12 +270,16 @@ ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=5, column=0)
 electrospray_output = tk.Text(monitor_frame, width=10, height=1)
 electrospray_output.grid(row=5, column=1)  # change t1 to ElectroVoltage
 electrospray_output.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(row=6, column=0)
+ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(
+    row=6, column=0
+)
 electrometer_conc_gui = tk.Text(monitor_frame, width=10, height=1)
 electrometer_conc_gui.grid(row=6, column=1)  # change t1 to ElectroVoltage
 electrometer_conc_gui.insert("1.0", "0.00")
 
-start_button = ttk.Button(monitor_frame, text="Start", width=5, command=start_run)
+start_button = ttk.Button(
+    monitor_frame, text="Start", width=5, command=start_run
+)
 start_button.grid(row=7, column=0, columnspan=2, pady=10, ipady=1)
 
 gui_entry_list = {
@@ -278,7 +306,9 @@ gui_text_list = {
 }
 
 ############ Open Labjack ##############################
-handle = ljm.openS("T7", "ANY", "ANY")  # T7 device, Any connection, Any identifier
+handle = ljm.openS(
+    "T7", "ANY", "ANY"
+)  # T7 device, Any connection, Any identifier
 info = ljm.getHandleInfo(handle)
 print(
     "Opened a LabJack with Device type: %i, Connection type: %i,\n"
@@ -303,6 +333,7 @@ def run_program(
     previous_voltage=0,
     sample_index=0,
 ):
+    runtime_start = datetime.now()
     # Enable Ultravolt
     ljm.eWriteName(handle, "DAC0", 3)
 
@@ -323,11 +354,28 @@ def run_program(
     # Datetime
     if datetime_old == None:
         datetime_old = datetime.now()
-    elapsed_milliseconds = 0
-    while elapsed_milliseconds < run_settings["step_time"]:
-        datetime_new = datetime.now()
-        elapsed_milliseconds = int((datetime_new - datetime_old).total_seconds() * 1000)
-    datetime_old = datetime_old + timedelta(seconds=run_settings["step_time"] / 1000)
+    else:
+        next_start = datetime_old + timedelta(
+            seconds=run_settings["step_time"] / 1000
+        )
+        # print(datetime_old)
+        # print(next_start)
+        # print(datetime.now())
+        datetime_old = next_start
+        sleep_time = (next_start - datetime.now()).total_seconds()
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+        else:
+            print(f"Slow! {datetime.now()}")
+    # elapsed_milliseconds = 0
+    # while elapsed_milliseconds < run_settings["step_time"]:
+    #     datetime_new = datetime.now()
+    #     elapsed_milliseconds = int(
+    #         (datetime_new - datetime_old).total_seconds() * 1000
+    #     )
+    # datetime_old = datetime_old + timedelta(
+    #     seconds=run_settings["step_time"] / 1000
+    # )
 
     # Stop run if stop button pressed
     if interrupt:
@@ -384,7 +432,9 @@ def run_program(
         previous_voltage = current_voltage
 
     repeat_readings = 0
-    dwell_steps = int(run_settings["step_time"] / run_settings["ms_between_nested"])
+    dwell_steps = (
+        int(run_settings["step_time"] / run_settings["ms_between_nested"]) * 0.9
+    )
     while repeat_readings < dwell_steps:
         # open file
         with open(run_settings["filename_raw"], "a", newline="") as csvfile:
@@ -421,8 +471,10 @@ def run_program(
                 repeat_readings * run_settings["ms_between_nested"]
                 - (datetime.now() - datetime_old).total_seconds() * 1000
             )
+            # print(repeat_reading_pause_time)
             if repeat_reading_pause_time > 0:
                 root.after(repeat_reading_pause_time)
+                # print("pause")
 
         # Update GUI and increment
         repeat_readings += 1
@@ -431,19 +483,34 @@ def run_program(
     readings = {}
     readings["exact time"] = exact_time[0]
     readings["set voltage"] = current_voltage
-    readings["time from start"] = runutilities.average_readings(time_from_start, dwell_steps)
-    readings["dma voltage"] = runutilities.average_readings(dma_voltage, dwell_steps)
-    readings["electrometer volt"] = runutilities.average_readings(electrometer_voltage, dwell_steps)
-    readings["electrometer conc"] = runutilities.average_readings(electrometer_conc, dwell_steps)
+    readings["time from start"] = runutilities.average_readings(
+        time_from_start, dwell_steps
+    )
+    readings["dma voltage"] = runutilities.average_readings(
+        dma_voltage, dwell_steps
+    )
+    readings["electrometer volt"] = runutilities.average_readings(
+        electrometer_voltage, dwell_steps
+    )
+    readings["electrometer conc"] = runutilities.average_readings(
+        electrometer_conc, dwell_steps
+    )
 
     # Correct RH
-    sheath_flow_temp_avg = runutilities.average_readings(sheath_flow_temp, dwell_steps)
-    sheath_flow_rh_avg = runutilities.average_readings(sheath_flow_rh, dwell_steps)
+    sheath_flow_temp_avg = runutilities.average_readings(
+        sheath_flow_temp, dwell_steps
+    )
+    sheath_flow_rh_avg = runutilities.average_readings(
+        sheath_flow_rh, dwell_steps
+    )
     v_supply = 5
     sheath_flow_rh_avg = (sheath_flow_rh_avg / v_supply - 0.16) / 0.0062
-    sheath_flow_rh_avg = sheath_flow_rh_avg / (1.0546 - 0.00216 * sheath_flow_temp_avg)
+    sheath_flow_rh_avg = sheath_flow_rh_avg / (
+        1.0546 - 0.00216 * sheath_flow_temp_avg
+    )
     readings["sheath flow temp"] = sheath_flow_temp_avg
     readings["sheath flow rh"] = sheath_flow_rh_avg
+    # print(f"Readings Runtime: {datetime.now() - runtime_start}")
 
     # Write Averaged Data to CSV
     with open(run_settings["filename_avg"], "a", newline="") as csvfile_avg:
@@ -457,7 +524,9 @@ def run_program(
             "sheath flow temp",
             "sheath flow rh",
         ]
-        data_writer_avg = csv.DictWriter(csvfile_avg, fieldnames=fieldnames, delimiter=",")
+        data_writer_avg = csv.DictWriter(
+            csvfile_avg, fieldnames=fieldnames, delimiter=","
+        )
         data_writer_avg.writerow(readings)
 
     # Update GUI
@@ -478,12 +547,19 @@ def run_program(
 
     # Update Graph
     runutilities.update_graph(
-        run_settings, time_from_start_list, dma_voltage_list, electrometer_conc_list, figure1, plt
+        run_settings,
+        time_from_start_list,
+        dma_voltage_list,
+        electrometer_conc_list,
+        figure1,
+        plt,
     )
 
     canvas.draw()
 
     root.update()
+    # print(f"Loop Runtime: {datetime.now() - runtime_start}")
+
     root.after(
         1,
         lambda: run_program(
