@@ -15,10 +15,7 @@ import configparser
 import pandas as pd
 import os
 
-import startutilities
-import runutilities
-import runvoltage
-import graphing
+from dmafnc import *
 
 # import yaml
 
