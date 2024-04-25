@@ -22,7 +22,7 @@ from dmafnc import *
 root = tk.Tk()
 
 config_file = configparser.ConfigParser()
-config_file.read(r"test_config.ini")
+config_file.read(r"dma_config.ini")
 
 
 # TKINTER defining the callback function (observer)
@@ -304,7 +304,7 @@ gui_text_list = {
 
 ############ Open Labjack ##############################
 handle = ljm.openS(
-    "T7", "ANY", "ANY"
+    "T7", "ANY", "470022830"
 )  # T7 device, Any connection, Any identifier
 info = ljm.getHandleInfo(handle)
 print(
@@ -316,6 +316,7 @@ print(
 ljm.eWriteName(handle, "AIN2_RESOLUTION_INDEX", 8)
 ljm.eWriteName(handle, "AIN2_RANGE", 1.0)
 
+handle1 = ljm.openS("T7", "ANY", "470031057")
 
 ########################### Main Program ###############################
 
@@ -335,7 +336,7 @@ def run_program(
     ljm.eWriteName(handle, "DAC0", 3)
 
     # Other Constants
-    electrometer_conv = 6.242e6 * 60
+    electrometer_conv = 1.083e-12 * 6.242e18 * 60  # charges/min
 
     # Define Lists
     exact_time = []
@@ -441,6 +442,7 @@ def run_program(
             runutilities.time_tracker(record_start, exact_time, time_from_start)
             electrospray_voltage, electrospray_current = runutilities.read_dma(
                 handle,
+                handle1,
                 run_settings,
                 electrometer_conv,
                 dma_voltage,
