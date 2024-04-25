@@ -1,5 +1,5 @@
 from labjack import ljm
-import startutilities
+from . import startutilities
 
 
 def voltage_select(
@@ -16,20 +16,26 @@ def voltage_select(
         sample_number = int(sample_index / run_settings["num_measurements"])
         if sample_number > len(run_settings["voltage_list"]) - 1:
             scan_finished = True
-        current_voltage = run_settings["voltage_list"][sample_number]
-        sample_index += 1
+            current_voltage = 0
+        else:
+            current_voltage = run_settings["voltage_list"][sample_number]
+            sample_index += 1
 
     # Voltage Scan Setting
     if run_settings["dma_mode"] == "voltage_scan":
         if run_settings["scan_start"] <= run_settings["scan_end"]:
             if previous_voltage > run_settings["scan_end"]:
                 scan_finished = True
-            current_voltage = run_settings["scan_start"] + run_settings["scan_step"] * sample_index
+            current_voltage = (
+                run_settings["scan_start"]
+                + run_settings["scan_step"] * sample_index
+            )
         else:
             if previous_voltage < run_settings["scan_end"]:
                 scan_finished = True
             current_voltage = (
-                run_settings["scan_start"] + run_settings["scan_step"] * sample_index * -1
+                run_settings["scan_start"]
+                + run_settings["scan_step"] * sample_index * -1
             )
         sample_index += 1
 
@@ -41,7 +47,13 @@ def voltage_select(
                 gui_entry_list, config_file, run_settings["filename_avg"]
             )
             single_voltage_update = False
-    return run_settings, scan_finished, current_voltage, sample_index, single_voltage_update
+    return (
+        run_settings,
+        scan_finished,
+        current_voltage,
+        sample_index,
+        single_voltage_update,
+    )
 
 
 def ultravolt_voltage_set(voltage_set, lj_handle, neg_output, pos_output):
