@@ -336,7 +336,7 @@ def run_program(
     ljm.eWriteName(handle, "DAC0", 3)
 
     # Other Constants
-    electrometer_conv = 1.083e-12 * 6.242e18 * 60  # charges/min
+    electrometer_conv = 1.083e-12 * 6.242e18  # charges/sec
 
     # Define Lists
     exact_time = []
@@ -346,6 +346,8 @@ def run_program(
     electrospray_current = []
     electrometer_voltage = []
     electrometer_conc = []
+    electrometer_counts = []
+    electrometer_flow = []
     sheath_flow_temp = []
     sheath_flow_rh = []
 
@@ -448,6 +450,8 @@ def run_program(
                 dma_voltage,
                 electrometer_voltage,
                 electrometer_conc,
+                electrometer_counts,
+                electrometer_flow,
                 sheath_flow_temp,
                 sheath_flow_rh,
             )
@@ -459,7 +463,8 @@ def run_program(
                     time_from_start[-1],
                     dma_voltage[-1],
                     electrometer_voltage[-1],
-                    electrometer_conc[-1],
+                    electrometer_counts[-1],
+                    electrometer_flow[-1],
                     electrospray_voltage,
                     electrospray_current,
                 ]
@@ -491,10 +496,19 @@ def run_program(
     readings["electrometer volt"] = runutilities.average_readings(
         electrometer_voltage, dwell_steps
     )
-    readings["electrometer conc"] = runutilities.average_readings(
-        electrometer_conc, dwell_steps
+    readings["electrometer counts"] = runutilities.average_readings(
+        electrometer_counts, dwell_steps
     )
-
+    readings["electrometer flow"] = runutilities.average_readings(
+        electrometer_flow, dwell_steps
+    )
+    print(readings["electrometer flow"])
+    # readings["electrometer conc"] = runutilities.average_readings(
+    #     electrometer_conc, dwell_steps
+    # )
+    readings["electrometer conc"] = readings["electrometer counts"] / (
+        readings["electrometer flow"] / 60
+    )
     # Correct RH
     sheath_flow_temp_avg = runutilities.average_readings(
         sheath_flow_temp, dwell_steps
@@ -522,6 +536,8 @@ def run_program(
             "set voltage",
             "sheath flow temp",
             "sheath flow rh",
+            "electrometer counts",
+            "electrometer flow",
         ]
         data_writer_avg = csv.DictWriter(
             csvfile_avg, fieldnames=fieldnames, delimiter=","

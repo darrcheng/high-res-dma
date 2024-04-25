@@ -13,12 +13,17 @@ def create_run_settings(gui_entries, config_file, run_filename):
         "sheath_temp_factor": int(config_file["general"]["sheath_temp_factor"]),
         "electrometer_read": config_file["lj_inputs"]["electrometer_read"],
         "dma_read": config_file["lj_inputs"]["dma_read"],
-        "electrospray_voltage_read": config_file["lj_inputs"]["electrospray_voltage_read"],
-        "electrospray_current_read": config_file["lj_inputs"]["electrospray_current_read"],
+        "electrospray_voltage_read": config_file["lj_inputs"][
+            "electrospray_voltage_read"
+        ],
+        "electrospray_current_read": config_file["lj_inputs"][
+            "electrospray_current_read"
+        ],
         "dma_write_neg": config_file["lj_inputs"]["dma_write_neg"],
         "dma_write_pos": config_file["lj_inputs"]["dma_write_pos"],
         "sheath_temp_read": config_file["lj_inputs"]["sheath_temp_read"],
         "sheath_rh_read": config_file["lj_inputs"]["sheath_rh_read"],
+        "elec_flow_read": config_file["lj_inputs"]["elec_flow_read"],
         "filename_raw": run_filename,
         "filename_avg": run_filename[:-4] + "_avg.csv",
     }
@@ -43,7 +48,9 @@ def create_run_settings(gui_entries, config_file, run_filename):
         )
 
     if gui_entries["dma mode"].get() == "single_voltage":
-        run_settings.update({"set_volt": gui_entries["single voltage value"].get()})
+        run_settings.update(
+            {"set_volt": gui_entries["single voltage value"].get()}
+        )
     return run_settings
 
 
