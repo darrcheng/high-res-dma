@@ -95,5 +95,7 @@ def write_header(run_filename, run_filename_avg):
                 "DMA Set Voltage",
                 "Sheath Temperature",
                 "Sheath RH",
+                "Electrometer Counts",
+                "Electrometer Flow Rate (sccm)",
             ]
         )
