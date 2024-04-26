@@ -7,7 +7,7 @@ def create_run_settings(gui_entries, config_file, run_filename):
     run_settings = {
         "dma_mode": gui_entries["dma mode"].get(),
         "step_time": gui_entries["streaming interval"].get(),
-        "flow_rate": gui_entries["electrometer flow"].get(),
+        # "flow_rate": gui_entries["electrometer flow"].get(),
         "ms_between_nested": int(config_file["general"]["ms_between_nested"]),
         "voltage_factor_dma": int(config_file["general"]["voltage_factor_dma"]),
         "sheath_temp_factor": int(config_file["general"]["sheath_temp_factor"]),

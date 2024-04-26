@@ -139,14 +139,22 @@ gui_filename.grid(row=0, column=1, pady=2)
 gui_filename.insert("1.0", "No Filename")
 
 # Input Electrometer Flow Rate
-electrometer_flow = tk.IntVar()
-electrometer_flow.set(config_file["general"]["electrometer_flow"])
-ttk.Label(FreqFrame, text="Input Flow Rate: ").grid(row=1, column=0, sticky="W")
-ElectrometerFlow = ttk.Entry(
-    FreqFrame, textvariable=electrometer_flow, width=13
-).grid(row=1, column=1, sticky="W")
-electrometer_flow.trace_add("write", my_callback)
+# electrometer_flow = tk.IntVar()
+# electrometer_flow.set(config_file["general"]["electrometer_flow"])
+ttk.Label(FreqFrame, text="Electrometer Flow Rate: ").grid(
+    row=1, column=0, sticky="W"
+)
+# ElectrometerFlow = ttk.Entry(
+#     FreqFrame, textvariable=electrometer_flow, width=13
+# ).grid(row=1, column=1, sticky="W")
+# electrometer_flow.trace_add("write", my_callback)
+elec_flow_gui = tk.Text(FreqFrame, width=10, height=1)
+elec_flow_gui.grid(row=1, column=1, padx=10)
+elec_flow_gui.insert("1.0", "0000")
 
+# sheath_rh_gui = tk.Text(monitor_frame, width=10, height=1)
+# sheath_rh_gui.grid(row=2, column=1, padx=10)  # change e0 to BertanStart
+# sheath_rh_gui.insert("1.0", "0.00")
 
 # Data logging frequency entry box and labels
 streamingInterval = tk.IntVar()
@@ -282,7 +290,7 @@ start_button.grid(row=7, column=0, columnspan=2, pady=10, ipady=1)
 gui_entry_list = {
     "dma mode": dma_mode,
     "streaming interval": streamingInterval,
-    "electrometer flow": electrometer_flow,
+    # "electrometer flow": electrometer_flow,
     "multi voltage list": multi_voltage_list,
     "repeat measure": repeat_measure,
     "scan start volt": scan_start_volt,
@@ -300,6 +308,7 @@ gui_text_list = {
     "dma voltage": dma_voltage_gui,
     "electrospray": electrospray_output,
     "concentration": electrometer_conc_gui,
+    "electrometer flow": elec_flow_gui,
 }
 
 ############ Open Labjack ##############################
@@ -479,6 +488,8 @@ def run_program(
             if repeat_reading_pause_time > 0:
                 root.after(repeat_reading_pause_time)
                 # print("pause")
+            else:
+                print("Slow inner loop!")
 
         # Update GUI and increment
         repeat_readings += 1
