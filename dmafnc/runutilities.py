@@ -9,7 +9,6 @@ def read_dma(
     electrometer_conv,
     dma_voltage,
     electrometer_voltage,
-    electrometer_conc,
     electrometer_counts,
     electrometer_flow,
     sheath_flow_temp,
@@ -19,16 +18,18 @@ def read_dma(
         ljm.eReadName(handle, run_settings["dma_read"])
         * run_settings["voltage_factor_dma"]
     )
-    electrospray_voltage = (
-        ljm.eReadName(handle, run_settings["electrospray_voltage_read"])
-        * 5000
-        / 5
-    )
-    electrospray_current = (
-        ljm.eReadName(handle, run_settings["electrospray_current_read"])
-        * 0.005
-        / 5
-    )
+    electrospray_voltage = 0
+    electrospray_current = 0
+    # electrospray_voltage = (
+    #     ljm.eReadName(handle, run_settings["electrospray_voltage_read"])
+    #     * 5000
+    #     / 5
+    # )
+    # electrospray_current = (
+    #     ljm.eReadName(handle, run_settings["electrospray_current_read"])
+    #     * 0.005
+    #     / 5
+    # )
     electrometer_voltage.append(
         ljm.eReadName(handle1, run_settings["electrometer_read"])
     )
@@ -36,9 +37,9 @@ def read_dma(
     electrometer_flow.append(
         ljm.eReadName(handle, run_settings["elec_flow_read"]) * 2196.9 + 184.31
     )
-    electrometer_conc.append(
-        electrometer_voltage[-1] * electrometer_conv / run_settings["flow_rate"]
-    )
+    # electrometer_conc.append(
+    #     electrometer_voltage[-1] * electrometer_conv / run_settings["flow_rate"]
+    # )
     sheath_flow_temp.append(
         ljm.eReadName(handle, run_settings["sheath_temp_read"])
         * run_settings["sheath_temp_factor"]
@@ -116,4 +117,8 @@ def update_gui(
     gui_text_list["sheath rh"].delete("1.0", "1.end")
     gui_text_list["sheath rh"].insert(
         "1.0", "%.0f" % readings["sheath flow rh"]
+    )
+    gui_text_list["electrometer flow"].delete("1.0", "1.end")
+    gui_text_list["electrometer flow"].insert(
+        "1.0", "%.1f" % readings["electrometer flow"]
     )

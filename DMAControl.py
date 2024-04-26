@@ -458,7 +458,7 @@ def run_program(
                 electrometer_conv,
                 dma_voltage,
                 electrometer_voltage,
-                electrometer_conc,
+                # electrometer_conc,
                 electrometer_counts,
                 electrometer_flow,
                 sheath_flow_temp,
@@ -488,8 +488,6 @@ def run_program(
             if repeat_reading_pause_time > 0:
                 root.after(repeat_reading_pause_time)
                 # print("pause")
-            else:
-                print("Slow inner loop!")
 
         # Update GUI and increment
         repeat_readings += 1
@@ -513,7 +511,7 @@ def run_program(
     readings["electrometer flow"] = runutilities.average_readings(
         electrometer_flow, dwell_steps
     )
-    print(readings["electrometer flow"])
+    # print(readings["electrometer flow"])
     # readings["electrometer conc"] = runutilities.average_readings(
     #     electrometer_conc, dwell_steps
     # )
