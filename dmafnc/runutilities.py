@@ -39,7 +39,7 @@ def read_dma(
     )
     elec_flow_vlt = ljm.eReadName(handle, "AIN4")
     elec_flow = elec_flow_vlt * 2196.9 + 184.31
-    print(elec_flow)
+    # print(elec_flow)
     sheath_flow_rh.append(ljm.eReadName(handle, run_settings["sheath_rh_read"]))
     return electrospray_voltage, electrospray_current
 
