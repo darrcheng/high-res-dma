@@ -267,7 +267,7 @@ ttk.Label(monitor_frame, text="Electrospray Current: ").grid(row=5, column=0)
 electrospray_output = tk.Text(monitor_frame, width=10, height=1)
 electrospray_output.grid(row=5, column=1)  # change t1 to ElectroVoltage
 electrospray_output.insert("1.0", "0.00")
-ttk.Label(monitor_frame, text="Electrometer Voltage (V): ").grid(
+ttk.Label(monitor_frame, text="Electrometer Conc (#/cc): ").grid(
     row=6, column=0
 )
 electrometer_conc_gui = tk.Text(monitor_frame, width=10, height=1)
